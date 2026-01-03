@@ -1,6 +1,7 @@
 #include "Core/Application.h"
 
 #include "AppLayer.h"
+#include "OverlayLayer.h"
 
 int main()
 {
@@ -11,5 +12,6 @@ int main()
 
 	Core::Application application(appSpec);
 	application.PushLayer<AppLayer>();
+	application.PushLayer<OverlayLayer>();
 	application.Run();
 }

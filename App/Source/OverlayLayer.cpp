@@ -17,7 +17,7 @@ OverlayLayer::OverlayLayer()
 	std::println("Created new OverlayLayer!");
 
 	// Create shaders
-	m_Shader = Renderer::CreateGraphicsShader("Shaders/Transform.vert.glsl", "Shaders/Texture.frag.glsl");
+	m_Shader = Renderer::CreateGraphicsShader("Resources/Shaders/Transform.vert.glsl", "Resources/Shaders/Texture.frag.glsl");
 
 	// Create geometry
 	glCreateVertexArrays(1, &m_VertexArray);
@@ -58,7 +58,7 @@ OverlayLayer::OverlayLayer()
 	glVertexArrayAttribBinding(m_VertexArray, 0, 0);
 	glVertexArrayAttribBinding(m_VertexArray, 1, 0);
 
-	m_Texture = Renderer::LoadTexture("Textures/Button.png");
+	m_Texture = Renderer::LoadTexture("Resources/Textures/Button.png");
 }
 
 OverlayLayer::~OverlayLayer()
@@ -71,17 +71,16 @@ OverlayLayer::~OverlayLayer()
 	glDeleteTextures(1, &m_Texture.Handle);
 }
 
-void OverlayLayer::OnEvent(Core::Event& event)
-{
-	Core::EventDispatcher dispatcher(event);
-	dispatcher.Dispatch<Core::MouseButtonPressedEvent>([this](Core::MouseButtonPressedEvent& e) { return OnMouseButtonPressed(e); });
-}
-
 void OverlayLayer::OnUpdate(float ts)
 {
-	m_IsHovered = IsButtonHovered();
+	glm::vec2 framebufferSize = Core::Application::Get().GetFramebufferSize();
+	glm::vec2 mousePos = Core::Application::Get().GetWindow()->GetMousePos();
+	glm::vec2 normalizedMousePos = (mousePos / framebufferSize) * 2.0f - 1.0f;
+	normalizedMousePos.y *= -1.0f;
 
-#if OLD
+	m_IsHovered = normalizedMousePos.x > (-0.8f - 0.2604 * 0.5f) && normalizedMousePos.x < (-0.8f + 0.2604f * 0.5f)
+		&& normalizedMousePos.y >(-0.75f - 0.2222f * 0.5f) && normalizedMousePos.y < (-0.75f + 0.2222f * 0.5f);
+
 	// Transition layer when button clicked
 	if (m_IsHovered && m_Pressed && glfwGetMouseButton(Core::Application::Get().GetWindow()->GetHandle(), GLFW_MOUSE_BUTTON_LEFT) == GLFW_RELEASE)
 	{
@@ -98,7 +97,6 @@ void OverlayLayer::OnUpdate(float ts)
 	}
 
 	m_Pressed = m_IsHovered && glfwGetMouseButton(Core::Application::Get().GetWindow()->GetHandle(), GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS;
-#endif
 }
 
 void OverlayLayer::OnRender()
@@ -122,34 +120,4 @@ void OverlayLayer::OnRender()
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glBindVertexArray(m_VertexArray);
 	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
-}
-
-bool OverlayLayer::IsButtonHovered() const
-{
-	glm::vec2 framebufferSize = Core::Application::Get().GetFramebufferSize();
-	glm::vec2 mousePos = Core::Application::Get().GetWindow()->GetMousePos();
-	glm::vec2 normalizedMousePos = (mousePos / framebufferSize) * 2.0f - 1.0f;
-	normalizedMousePos.y *= -1.0f;
-
-	return normalizedMousePos.x > (-0.8f - 0.2604 * 0.5f) && normalizedMousePos.x < (-0.8f + 0.2604f * 0.5f)
-		&& normalizedMousePos.y >(-0.75f - 0.2222f * 0.5f) && normalizedMousePos.y < (-0.75f + 0.2222f * 0.5f);
-}
-
-bool OverlayLayer::OnMouseButtonPressed(Core::MouseButtonPressedEvent& event)
-{
-	if (!IsButtonHovered())
-		return false;
-
-	auto voidLayer = Core::Application::Get().GetLayer<VoidLayer>();
-	if (voidLayer)
-	{
-		voidLayer->TransitionTo<AppLayer>();
-	}
-	else
-	{
-		auto appLayer = Core::Application::Get().GetLayer<AppLayer>();
-		//appLayer->TransitionTo<VoidLayer>();
-	}
-
-	return true;
 }

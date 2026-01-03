@@ -28,7 +28,8 @@ namespace Core {
 
 		void Update();
 
-		glm::vec2 GetFramebufferSize();
+		glm::vec2 GetFramebufferSize() const;
+		glm::vec2 GetMousePos() const;
 
 		bool ShouldClose() const;
 

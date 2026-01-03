@@ -16,4 +16,6 @@ private:
 	uint32_t m_Shader = 0;
 	uint32_t m_VertexArray = 0;
 	uint32_t m_VertexBuffer = 0;
+
+	float m_Time = 0.0f;
 };

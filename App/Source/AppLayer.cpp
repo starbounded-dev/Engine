@@ -1,5 +1,7 @@
 #include "AppLayer.h"
 
+#include "VoidLayer.h"
+
 #include "Core/Application.h"
 
 #include "Core/Renderer/Renderer.h"
@@ -7,10 +9,14 @@
 
 #include <glm/glm.hpp>
 
+#include <print>
+
 AppLayer::AppLayer()
 {
+	std::println("Created new AppLayer!");
+
 	// Create shaders
-	m_Shader = Renderer::CreateGraphicsShader("Resources/Shaders/Vertex.glsl", "Resources/Shaders/Fragment.glsl");
+	m_Shader = Renderer::CreateGraphicsShader("Resources/Shaders/Fullscreen.vert.glsl", "Resources/Shaders/Flame.frag.glsl");
 
 	// Create geometry
 	glCreateVertexArrays(1, &m_VertexArray);
@@ -56,6 +62,12 @@ AppLayer::~AppLayer()
 
 void AppLayer::OnUpdate(float ts)
 {
+	m_Time += ts;
+
+	if (glfwGetKey(Core::Application::Get().GetWindow()->GetHandle(), GLFW_KEY_1) == GLFW_PRESS)
+	{
+		TransitionTo<VoidLayer>();
+	}
 }
 
 void AppLayer::OnRender()
@@ -63,7 +75,7 @@ void AppLayer::OnRender()
 	glUseProgram(m_Shader);
 
 	// Uniforms
-	glUniform1f(0, Core::Application::GetTime());
+	glUniform1f(0, m_Time);
 
 	glm::vec2 framebufferSize = Core::Application::Get().GetFramebufferSize();
 	glUniform2f(1, framebufferSize.x, framebufferSize.y);
@@ -71,6 +83,9 @@ void AppLayer::OnRender()
 	glViewport(0, 0, static_cast<GLsizei>(framebufferSize.x), static_cast<GLsizei>(framebufferSize.y));
 
 	// Render
+	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+	glClear(GL_COLOR_BUFFER_BIT);
+
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	glBindVertexArray(m_VertexArray);
 	glDrawArrays(GL_TRIANGLES, 0, 3);

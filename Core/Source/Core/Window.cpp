@@ -1,6 +1,6 @@
 #include "Window.h"
 
-#include "glad/glad.h"
+#include <glad/glad.h>
 
 #include <iostream>
 #include <assert.h>
@@ -52,11 +52,18 @@ namespace Core {
 		glfwSwapBuffers(m_Handle);
 	}
 
-	glm::vec2 Window::GetFramebufferSize()
+	glm::vec2 Window::GetFramebufferSize() const
 	{
 		int width, height;
 		glfwGetFramebufferSize(m_Handle, &width, &height);
 		return { width, height };
+	}
+
+	glm::vec2 Window::GetMousePos() const
+	{
+		double x, y;
+		glfwGetCursorPos(m_Handle, &x, &y);
+		return { static_cast<float>(x), static_cast<float>(y) };
 	}
 
 	bool Window::ShouldClose() const
