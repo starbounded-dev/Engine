@@ -8,6 +8,7 @@
 
 #include <assert.h>
 #include <iostream>
+#include <ranges>
 
 namespace Core {
 
@@ -29,6 +30,8 @@ namespace Core {
 		// Set window title to app name if empty
 		if (m_Specification.WindowSpec.Title.empty())
 			m_Specification.WindowSpec.Title = m_Specification.Name;
+
+		m_Specification.WindowSpec.EventCallback = [this](Event& event) { RaiseEvent(event); };
 
 		m_Window = std::make_shared<Window>(m_Specification.WindowSpec);
 		m_Window->Create();
@@ -81,6 +84,16 @@ namespace Core {
 	void Application::Stop()
 	{
 		m_Running = false;
+	}
+
+	void Application::RaiseEvent(Event& event)
+	{
+		for (auto& layer : std::views::reverse(m_LayerStack))
+		{
+			layer->OnEvent(event);
+			if (event.Handled)
+				break;
+		}
 	}
 
 	glm::vec2 Application::GetFramebufferSize() const

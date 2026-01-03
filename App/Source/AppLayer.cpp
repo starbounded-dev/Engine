@@ -60,6 +60,16 @@ AppLayer::~AppLayer()
 	glDeleteProgram(m_Shader);
 }
 
+void AppLayer::OnEvent(Core::Event& event)
+{
+	std::println("{}", event.ToString());
+
+	Core::EventDispatcher dispatcher(event);
+	dispatcher.Dispatch<Core::MouseButtonPressedEvent>([this](Core::MouseButtonPressedEvent& e) { return OnMouseButtonPressed(e); });
+	dispatcher.Dispatch<Core::MouseMovedEvent>([this](Core::MouseMovedEvent& e) { return OnMouseMoved(e); });
+	dispatcher.Dispatch<Core::WindowClosedEvent>([this](Core::WindowClosedEvent& e) { return OnWindowClosed(e); });
+}
+
 void AppLayer::OnUpdate(float ts)
 {
 	m_Time += ts;
@@ -80,6 +90,8 @@ void AppLayer::OnRender()
 	glm::vec2 framebufferSize = Core::Application::Get().GetFramebufferSize();
 	glUniform2f(1, framebufferSize.x, framebufferSize.y);
 
+	glUniform2f(2, m_FlamePosition.x, m_FlamePosition.y);
+
 	glViewport(0, 0, static_cast<GLsizei>(framebufferSize.x), static_cast<GLsizei>(framebufferSize.y));
 
 	// Render
@@ -89,4 +101,32 @@ void AppLayer::OnRender()
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	glBindVertexArray(m_VertexArray);
 	glDrawArrays(GL_TRIANGLES, 0, 3);
+}
+
+bool AppLayer::OnMouseButtonPressed(Core::MouseButtonPressedEvent& event)
+{
+	glm::vec2 framebufferSize = Core::Application::Get().GetFramebufferSize();
+	float aspectRatio = framebufferSize.x / framebufferSize.y;
+	glm::vec2 normalizedMousePos = (m_MousePosition / framebufferSize) * 2.0f - 1.0f;
+	normalizedMousePos.x *= aspectRatio;
+	normalizedMousePos.y *= -1.0f;
+	normalizedMousePos.y += 0.7f;
+
+	m_FlamePosition = -normalizedMousePos;
+
+	return false;
+}
+
+bool AppLayer::OnMouseMoved(Core::MouseMovedEvent& event)
+{
+	m_MousePosition = { static_cast<float>(event.GetX()), static_cast<float>(event.GetY()) };
+
+	return false;
+}
+
+bool AppLayer::OnWindowClosed(Core::WindowClosedEvent& event)
+{
+	std::println("Window Closed!");
+
+	return false;
 }
