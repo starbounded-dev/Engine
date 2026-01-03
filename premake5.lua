@@ -20,6 +20,8 @@ workspace "Engine"
 		"NOMINMAX",
 		"SPDLOG_USE_STD_FORMAT",
 		"_SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING",
+
+		"IMGUI_DEFINE_MATH_OPERATORS"
 	}
 
     filter "action:vs*"
@@ -53,6 +55,7 @@ outputdir = "%{cfg.buildcfg}-%{cfg.system}-%{cfg.architecture}"
 
 group "Dependencies"
 	include "Core/vendor/GLFW"
+	include "Core/vendor/imgui"
 group ""
 
 group "Dependencies/Text"

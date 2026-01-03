@@ -36,6 +36,9 @@ namespace Core {
 		m_Window = std::make_shared<Window>(m_Specification.WindowSpec);
 		m_Window->Create();
 
+		m_ImGuiLayer = new ImGuiLayer();
+		PushLayer<ImGuiLayer>();
+
 		Renderer::Utils::InitOpenGLDebugMessageCallback();
 	}
 
@@ -76,6 +79,15 @@ namespace Core {
 			// NOTE: rendering can be done elsewhere (eg. render thread)
 			for (const std::unique_ptr<Layer>& layer : m_LayerStack)
 				layer->OnRender();
+
+			m_ImGuiLayer->Begin();
+			{
+				//SE_PROFILE_SCOPE("LayerStack OnImGuiRender");
+
+				for (const std::unique_ptr<Layer>& layer : m_LayerStack)
+					layer->OnImGuiRender();
+			}
+			m_ImGuiLayer->End();
 
 			m_Window->Update();
 		}

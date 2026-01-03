@@ -2,6 +2,7 @@
 
 #include "AppLayer.h"
 #include "OverlayLayer.h"
+#include "ImLayer.h"
 
 int main()
 {
@@ -11,7 +12,8 @@ int main()
 	appSpec.WindowSpec.Height = 1080;
 
 	Core::Application application(appSpec);
-	application.PushLayer<AppLayer>();
-	application.PushLayer<OverlayLayer>();
+	//application.PushLayer<AppLayer>();
+	//application.PushLayer<OverlayLayer>();
+	application.PushLayer<Core::ImLayer>();
 	application.Run();
 }
