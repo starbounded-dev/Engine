@@ -1,5 +1,8 @@
 ﻿#include "ImLayer.h"
 
+#include "Core/Application.h"
+#include "Core/Renderer/Renderer.h"
+
 #include <imgui.h>
 #include <GLFW/glfw3.h> // for GLFW_KEY_F1/F2
 
@@ -30,9 +33,9 @@ namespace Core
 
 	void ImLayer::OnRender()
 	{
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
-		glClearColor(0.05f, 0.05f, 0.05f, 1.0f);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+		auto size = Core::Application::Get().GetFramebufferSize();
+
+		Renderer::BeginFrame((int)size.x, (int)size.y);
 	}
 
 	void ImLayer::OnImGuiRender()
@@ -43,7 +46,7 @@ namespace Core
 
 		// 2) your window
 		ImGui::Begin("ImLayer");
-		ImGui::Text("Hello from ImLayer 😈");
+		ImGui::Text("Hello from ImLayer");
 		ImGui::Text("FPS: %.1f", ImGui::GetIO().Framerate);
 
 		ImGui::Checkbox("Show Demo Window (F1)", &m_ShowDemoWindow);

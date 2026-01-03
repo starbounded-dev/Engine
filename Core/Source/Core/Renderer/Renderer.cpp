@@ -106,4 +106,12 @@ namespace Renderer {
 			GL_COLOR_BUFFER_BIT, GL_NEAREST);
 	}
 
+	void Renderer::BeginFrame(int w, int h)
+	{
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		glViewport(0, 0, w, h);
+		glClearColor(0.05f, 0.05f, 0.05f, 1.0f);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+	}
+
 }
