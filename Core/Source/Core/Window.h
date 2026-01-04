@@ -45,6 +45,9 @@ namespace Core {
 
 		unsigned int GetWidth() const { return m_Specification.Width; }
 		unsigned int GetHeight() const { return m_Specification.Height; }
+
+		void Maximize();
+		void CenterWindow();
 	private:
 		WindowSpecification m_Specification;
 

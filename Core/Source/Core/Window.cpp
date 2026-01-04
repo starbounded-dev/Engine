@@ -157,4 +157,17 @@ namespace Core {
 		return glfwWindowShouldClose(m_Handle) != 0;
 	}
 
+	void Window::Maximize()
+	{
+		glfwMaximizeWindow(m_Handle);
+	}
+
+	void Window::CenterWindow()
+	{
+		const GLFWvidmode* videmode = glfwGetVideoMode(glfwGetPrimaryMonitor());
+		int x = (videmode->width / 2) - (m_Specification.Width / 2);
+		int y = (videmode->height / 2) - (m_Specification.Height / 2);
+		glfwSetWindowPos(m_Handle, x, y);
+	}
+
 }
