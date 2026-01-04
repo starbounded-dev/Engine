@@ -1,5 +1,7 @@
 #include "Shader.h"
 
+#include "Core/Debug/Profiler.h"
+
 #include <iostream>
 #include <fstream>
 
@@ -9,6 +11,8 @@ namespace Renderer {
 
 	static std::string ReadTextFile(const std::filesystem::path& path)
 	{
+		PROFILE_FUNC();
+
 		std::ifstream file(path);
 
 		if (!file.is_open())
@@ -24,6 +28,8 @@ namespace Renderer {
 
 	uint32_t CreateComputeShader(const std::filesystem::path& path)
 	{
+		PROFILE_FUNC();
+
 		std::string shaderSource = ReadTextFile(path);
 
 		GLuint shaderHandle = glCreateShader(GL_COMPUTE_SHADER);
@@ -77,6 +83,8 @@ namespace Renderer {
 
 	uint32_t ReloadComputeShader(uint32_t shaderHandle, const std::filesystem::path& path)
 	{
+		PROFILE_FUNC();
+
 		uint32_t newShaderHandle = CreateComputeShader(path);
 
 		// Return old shader if compilation failed
@@ -89,6 +97,8 @@ namespace Renderer {
 
 	uint32_t CreateGraphicsShader(const std::filesystem::path& vertexPath, const std::filesystem::path& fragmentPath)
 	{
+		PROFILE_FUNC();
+
 		std::string vertexShaderSource = ReadTextFile(vertexPath);
 		std::string fragmentShaderSource = ReadTextFile(fragmentPath);
 
@@ -175,6 +185,8 @@ namespace Renderer {
 
 	uint32_t ReloadGraphicsShader(uint32_t shaderHandle, const std::filesystem::path& vertexPath, const std::filesystem::path& fragmentPath)
 	{
+		PROFILE_FUNC();
+
 		uint32_t newShaderHandle = CreateGraphicsShader(vertexPath, fragmentPath);
 
 		// Return old shader if compilation failed

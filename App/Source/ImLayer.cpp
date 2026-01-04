@@ -3,6 +3,8 @@
 #include "Core/Application.h"
 #include "Core/Renderer/Renderer.h"
 
+#include "Core/Debug/Profiler.h"
+
 #include <imgui.h>
 #include <GLFW/glfw3.h> // for GLFW_KEY_F1/F2
 
@@ -33,6 +35,8 @@ namespace Core
 
 	void ImLayer::OnRender()
 	{
+		PROFILE_FUNC();
+
 		auto size = Core::Application::Get().GetFramebufferSize();
 
 		Renderer::BeginFrame((int)size.x, (int)size.y);
@@ -40,6 +44,8 @@ namespace Core
 
 	void ImLayer::OnImGuiRender()
 	{
+		PROFILE_FUNC();
+
 		// 1) optional: imgui demo
 		if (m_ShowDemoWindow)
 			ImGui::ShowDemoWindow(&m_ShowDemoWindow);
@@ -89,6 +95,8 @@ namespace Core
 
 	void ImLayer::OnOverlayRender()
 	{
+		PROFILE_FUNC();
+
 		const ImGuiWindowFlags flags =
 			ImGuiWindowFlags_NoDecoration |
 			ImGuiWindowFlags_AlwaysAutoResize |

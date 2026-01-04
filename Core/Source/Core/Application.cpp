@@ -1,5 +1,6 @@
 #include "Application.h"
 
+#include "Debug/Profiler.h"
 #include "Renderer/GLUtils.h"
 
 #include <GLFW/glfw3.h>
@@ -9,6 +10,8 @@
 #include <assert.h>
 #include <iostream>
 #include <ranges>
+
+
 
 namespace Core {
 
@@ -22,6 +25,8 @@ namespace Core {
 	Application::Application(const ApplicationSpecification& specification)
 		: m_Specification(specification)
 	{
+		PROFILE_FUNC();
+
 		s_Application = this;
 
 		glfwSetErrorCallback(GLFWErrorCallback);
@@ -60,6 +65,8 @@ namespace Core {
 		// Main Application loop
 		while (m_Running)
 		{
+			PROFILE_SCOPE();
+
 			glfwPollEvents();
 
 			if (m_Window->ShouldClose())

@@ -2,6 +2,8 @@
 
 #include "Core/Application.h"
 
+#include "Core/Debug/Profiler.h"
+
 #include "Colors.h"
 
 #include <imgui.h>
@@ -14,10 +16,6 @@
 #include <GLFW/glfw3.h>
 #include <glad/glad.h>
 
-
-
-#define SE_PROFILE_FUNCTION(name)
-
 namespace Core {
 
 	ImGuiLayer::ImGuiLayer()
@@ -28,7 +26,7 @@ namespace Core {
 
 	void ImGuiLayer::OnAttach()
 	{
-		SE_PROFILE_FUNCTION("ImGuiLayer::OnAttach");
+		PROFILE_FUNC();
 
 		// Setup Dear ImGui context
 		IMGUI_CHECKVERSION();
@@ -67,7 +65,7 @@ namespace Core {
 
 	void ImGuiLayer::OnDetach()
 	{
-		SE_PROFILE_FUNCTION("ImGuiLayer::OnDetach");
+		PROFILE_FUNC();
 
 		ImGui_ImplOpenGL3_Shutdown();
 		ImGui_ImplGlfw_Shutdown();
@@ -85,7 +83,7 @@ namespace Core {
 
 	void ImGuiLayer::Begin()
 	{
-		SE_PROFILE_FUNCTION("ImGuiLayer::Begin");
+		PROFILE_FUNC();
 
 		ImGui_ImplOpenGL3_NewFrame();
 		ImGui_ImplGlfw_NewFrame();
@@ -94,7 +92,7 @@ namespace Core {
 
 	void ImGuiLayer::End()
 	{
-		SE_PROFILE_FUNCTION("ImGuiLayer::End");
+		PROFILE_FUNC();
 
 		ImGuiIO& io = ImGui::GetIO();
 		Application& app = Application::Get();

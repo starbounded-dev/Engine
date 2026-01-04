@@ -8,3 +8,7 @@
 	path = Core/vendor/imgui
 	url = https://github.com/StudioCherno/imgui
 	branch = Hazel
+[submodule "Core/vendor/tracy/tracy"]
+	path = Core/vendor/tracy/tracy
+	url = https://github.com/wolfpld/tracy
+	branch = v0.9.1

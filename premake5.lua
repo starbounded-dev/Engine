@@ -20,6 +20,9 @@ workspace "Engine"
 		"NOMINMAX",
 		"SPDLOG_USE_STD_FORMAT",
 		"_SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING",
+		"TRACY_ENABLE",
+		"TRACY_ON_DEMAND",
+		"TRACY_CALLSTACK=10",
 
 		"IMGUI_DEFINE_MATH_OPERATORS"
 	}
@@ -59,6 +62,7 @@ outputdir = "%{cfg.buildcfg}-%{cfg.system}-%{cfg.architecture}"
 group "Dependencies"
 	include "Core/vendor/GLFW"
 	include "Core/vendor/imgui"
+	include "Core/vendor/tracy"
 group ""
 
 group "Dependencies/Text"
