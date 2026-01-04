@@ -22,6 +22,7 @@ namespace Core {
 		void BlockEvents(bool block) { m_BlockEvents = block; }
 
 		void SetDarkThemeColors();
+		void SetDarkThemeV2Colors();
 
 		uint32_t GetActiveWidgetID() const;
 	private:
