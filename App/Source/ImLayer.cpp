@@ -46,25 +46,76 @@ namespace Core
 	{
 		PROFILE_FUNC();
 
-		// 1) optional: imgui demo
+		static bool dockspaceOpen = true;
+		static bool fullscreen = true;
+		static ImGuiDockNodeFlags dockspaceFlags = ImGuiDockNodeFlags_PassthruCentralNode;
+
+		ImGuiWindowFlags windowFlags =
+			ImGuiWindowFlags_MenuBar |
+			ImGuiWindowFlags_NoDocking;
+
+		if (fullscreen)
+		{
+			const ImGuiViewport* viewport = ImGui::GetMainViewport();
+			ImGui::SetNextWindowPos(viewport->WorkPos);
+			ImGui::SetNextWindowSize(viewport->WorkSize);
+			ImGui::SetNextWindowViewport(viewport->ID);
+
+			windowFlags |= ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse |
+				ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove |
+				ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
+		}
+
+		if (dockspaceFlags & ImGuiDockNodeFlags_PassthruCentralNode)
+			windowFlags |= ImGuiWindowFlags_NoBackground;
+
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+
+		ImGui::Begin("DockSpace", &dockspaceOpen, windowFlags);
+
+		ImGui::PopStyleVar(2);
+
+		// DockSpace node
+		ImGuiID dockspaceID = ImGui::GetID("MyDockSpace");
+		ImGui::DockSpace(dockspaceID, ImVec2(0.0f, 0.0f), dockspaceFlags);
+
+		// Menu bar
+		if (ImGui::BeginMenuBar())
+		{
+			if (ImGui::BeginMenu("File"))
+			{
+				if (ImGui::MenuItem("Exit"))
+					Core::Application::Get().Stop();
+				ImGui::EndMenu();
+			}
+
+			if (ImGui::BeginMenu("Windows"))
+			{
+				ImGui::MenuItem("ImLayer", nullptr, nullptr, false); // just label
+				ImGui::MenuItem("Demo", nullptr, &m_ShowDemoWindow);
+				ImGui::MenuItem("Overlay", nullptr, &m_ShowOverlay);
+				ImGui::EndMenu();
+			}
+
+			ImGui::EndMenuBar();
+		}
+
+		ImGui::End(); // DockSpace host
+
+		// ---- Your dockable windows below ----
+
 		if (m_ShowDemoWindow)
 			ImGui::ShowDemoWindow(&m_ShowDemoWindow);
 
-		// 2) your window
 		ImGui::Begin("ImLayer");
 		ImGui::Text("Hello from ImLayer");
 		ImGui::Text("FPS: %.1f", ImGui::GetIO().Framerate);
-
-		ImGui::Checkbox("Show Demo Window (F1)", &m_ShowDemoWindow);
-		ImGui::Checkbox("Show Overlay (F2)", &m_ShowOverlay);
-
-		ImGui::Separator();
 		ImGui::Text("Mouse clicks: %d", m_Clicks);
 		ImGui::End();
 
-		// 3) overlay
 		if (m_ShowOverlay)
-			OnOverlayRender();
+			OnOverlayRender(); // consider adding NoDocking flags inside overlay
 	}
 
 	bool ImLayer::OnKeyPressed(KeyPressedEvent& e)
