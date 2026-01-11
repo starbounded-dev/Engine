@@ -3,6 +3,7 @@
 #include "AppLayer.h"
 #include "OverlayLayer.h"
 #include "ImLayer.h"
+#include "ExampleLayer.h"
 
 int main()
 {
@@ -14,6 +15,7 @@ int main()
 	Core::Application application(appSpec);
 	//application.PushLayer<AppLayer>();
 	//application.PushLayer<OverlayLayer>();
-	application.PushLayer<Core::ImLayer>();
+	//application.PushLayer<Core::ImLayer>();
+	application.PushLayer<ExampleLayer>();
 	application.Run();
 }

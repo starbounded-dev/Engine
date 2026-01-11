@@ -2,6 +2,7 @@
 
 #include "Debug/Profiler.h"
 #include "Renderer/GLUtils.h"
+#include "Input/Input.h"
 
 #include <GLFW/glfw3.h>
 
@@ -40,6 +41,8 @@ namespace Core {
 
 		m_Window = std::make_shared<Window>(m_Specification.WindowSpec);
 		m_Window->Create();
+
+		Input::SetWindow(m_Window->GetHandle());
 
 		m_ImGuiLayer = new ImGuiLayer();
 		PushLayer<ImGuiLayer>();

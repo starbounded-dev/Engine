@@ -17,7 +17,7 @@ namespace Core {
 
 	struct ApplicationSpecification
 	{
-		std::string Name = "Application";
+		std::string Name = "Lux";
 		WindowSpecification WindowSpec;
 	};
 

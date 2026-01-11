@@ -1,7 +1,7 @@
 include "./vendor/premake_customization/solution_items.lua"
 include "Dependencies.lua"
 
-workspace "Engine"
+workspace "Lux"
 	configurations { "Debug", "Debug-AS", "Release", "Dist" }
 	startproject "App"
     conformancemode "On"
