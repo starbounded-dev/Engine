@@ -1,8 +1,9 @@
 #pragma once
 
-#include "Layer.h"
 #include "Window.h"
 #include "Event.h"
+
+#include "ImGui/ImGuiLayer.h"
 
 #include <glm/glm.hpp>
 
@@ -35,8 +36,11 @@ namespace Core {
 			requires(std::is_base_of_v<Layer, TLayer>)
 		void PushLayer()
 		{
-			m_LayerStack.push_back(std::make_unique<TLayer>());
+			auto layer = std::make_unique<TLayer>();
+			layer->OnAttach();
+			m_LayerStack.push_back(std::move(layer));
 		}
+
 
 		template<typename TLayer>
 			requires(std::is_base_of_v<Layer, TLayer>)
@@ -54,11 +58,14 @@ namespace Core {
 
 		std::shared_ptr<Window> GetWindow() const { return m_Window; }
 
+		ImGuiLayer* GetImGuiLayer() { return m_ImGuiLayer; }
+
 		static Application& Get();
 		static float GetTime();
 	private:
 		ApplicationSpecification m_Specification;
 		std::shared_ptr<Window> m_Window;
+		ImGuiLayer* m_ImGuiLayer;
 		bool m_Running = false;
 
 		std::vector<std::unique_ptr<Layer>> m_LayerStack;

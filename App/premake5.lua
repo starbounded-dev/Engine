@@ -57,4 +57,8 @@ project "App"
 		ProcessDependencies("Release")
 
     filter "configurations:Dist"
-        flags { "ExcludeFromBuild" }
+        optimize "On"
+        vectorextensions "AVX2"
+        isaextensions { "BMI", "POPCNT", "LZCNT", "F16C" }
+
+		ProcessDependencies("Dist ")

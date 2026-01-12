@@ -25,4 +25,5 @@ namespace Renderer {
 	Framebuffer CreateFramebufferWithTexture(const Texture texture);
 	bool AttachTextureToFramebuffer(Framebuffer& framebuffer, const Texture texture);
 	void BlitFramebufferToSwapchain(const Framebuffer framebuffer);
+	void BeginFrame(int w, int h);
 }

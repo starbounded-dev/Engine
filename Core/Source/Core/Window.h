@@ -17,7 +17,7 @@ namespace Core {
 		uint32_t Width = 1280;
 		uint32_t Height = 720;
 		bool IsResizeable = true;
-		bool VSync = true;
+		bool VSync = false;
 
 		using EventCallbackFn = std::function<void(Event&)>;
 		EventCallbackFn EventCallback;
@@ -42,6 +42,12 @@ namespace Core {
 		bool ShouldClose() const;
 
 		GLFWwindow* GetHandle() const { return m_Handle; }
+
+		unsigned int GetWidth() const { return m_Specification.Width; }
+		unsigned int GetHeight() const { return m_Specification.Height; }
+
+		void Maximize();
+		void CenterWindow();
 	private:
 		WindowSpecification m_Specification;
 

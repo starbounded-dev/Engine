@@ -3,10 +3,14 @@
 #include "WindowEvents.h"
 #include "InputEvents.h"
 
+#include "Debug/Profiler.h"
+
 #include <glad/glad.h>
 
 #include <iostream>
 #include <assert.h>
+
+
 
 namespace Core {
 
@@ -22,6 +26,8 @@ namespace Core {
 
 	void Window::Create()
 	{
+		PROFILE_FUNC();
+
 		glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
 		glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
 		glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
@@ -155,6 +161,19 @@ namespace Core {
 	bool Window::ShouldClose() const
 	{
 		return glfwWindowShouldClose(m_Handle) != 0;
+	}
+
+	void Window::Maximize()
+	{
+		glfwMaximizeWindow(m_Handle);
+	}
+
+	void Window::CenterWindow()
+	{
+		const GLFWvidmode* videmode = glfwGetVideoMode(glfwGetPrimaryMonitor());
+		int x = (videmode->width / 2) - (m_Specification.Width / 2);
+		int y = (videmode->height / 2) - (m_Specification.Height / 2);
+		glfwSetWindowPos(m_Handle, x, y);
 	}
 
 }

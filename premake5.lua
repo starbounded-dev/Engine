@@ -20,6 +20,11 @@ workspace "Engine"
 		"NOMINMAX",
 		"SPDLOG_USE_STD_FORMAT",
 		"_SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING",
+		"TRACY_ENABLE",
+		"TRACY_ON_DEMAND",
+		"TRACY_CALLSTACK=10",
+
+		"IMGUI_DEFINE_MATH_OPERATORS"
 	}
 
     filter "action:vs*"
@@ -32,6 +37,7 @@ workspace "Engine"
 	filter "configurations:Debug or configurations:Debug-AS"
 		optimize "Off"
 		symbols "On"
+		defines { "DEBUG" }
 
 	filter { "system:windows", "configurations:Debug-AS" }	
 		sanitize { "Address" }
@@ -40,19 +46,23 @@ workspace "Engine"
 	filter "configurations:Release"
 		optimize "On"
 		symbols "Default"
-		defines { "NDEBUG" }
+		defines { "NDEBUG", "RELEASE" }
 
 	filter "configurations:Dist"
 		optimize "Full"
 		symbols "Off"
+		defines { "DIST" }
 
 	filter "system:windows"
 		buildoptions { "/EHsc", "/Zc:preprocessor", "/Zc:__cplusplus" }
+		defines { "PLATFORM_WINDOWS" }
 
 outputdir = "%{cfg.buildcfg}-%{cfg.system}-%{cfg.architecture}"
 
 group "Dependencies"
 	include "Core/vendor/GLFW"
+	include "Core/vendor/imgui"
+	include "Core/vendor/tracy"
 group ""
 
 group "Dependencies/Text"

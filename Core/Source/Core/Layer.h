@@ -9,11 +9,15 @@ namespace Core {
 	class Layer
 	{
 	public:
+		Layer(const std::string& name = "Layer");
 		virtual ~Layer() = default;
 
 		virtual void OnEvent(Event& event) {}
+		virtual void OnAttach() {}
+		virtual void OnDetach() {}
 
 		virtual void OnUpdate(float ts) {}
+		virtual void OnImGuiRender() {}
 		virtual void OnRender() {}
 
 		template<std::derived_from<Layer> T, typename... Args>
@@ -23,6 +27,8 @@ namespace Core {
 		}
 	private:
 		void QueueTransition(std::unique_ptr<Layer> layer);
+	private:
+		std::string m_DebugName;
 	};
 
 }

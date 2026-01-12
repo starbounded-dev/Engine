@@ -4,6 +4,12 @@
 
 namespace Core {
 
+	Layer::Layer(const std::string& debugName)
+		: m_DebugName(debugName)
+	{
+
+	}
+
 	void Layer::QueueTransition(std::unique_ptr<Layer> toLayer)
 	{
 		// TODO: don't do this

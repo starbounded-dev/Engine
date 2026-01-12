@@ -1,5 +1,6 @@
 #include "Application.h"
 
+#include "Debug/Profiler.h"
 #include "Renderer/GLUtils.h"
 
 #include <GLFW/glfw3.h>
@@ -9,6 +10,8 @@
 #include <assert.h>
 #include <iostream>
 #include <ranges>
+
+
 
 namespace Core {
 
@@ -22,6 +25,8 @@ namespace Core {
 	Application::Application(const ApplicationSpecification& specification)
 		: m_Specification(specification)
 	{
+		PROFILE_FUNC();
+
 		s_Application = this;
 
 		glfwSetErrorCallback(GLFWErrorCallback);
@@ -35,6 +40,9 @@ namespace Core {
 
 		m_Window = std::make_shared<Window>(m_Specification.WindowSpec);
 		m_Window->Create();
+
+		m_ImGuiLayer = new ImGuiLayer();
+		PushLayer<ImGuiLayer>();
 
 		Renderer::Utils::InitOpenGLDebugMessageCallback();
 	}
@@ -57,6 +65,8 @@ namespace Core {
 		// Main Application loop
 		while (m_Running)
 		{
+			PROFILE_SCOPE();
+
 			glfwPollEvents();
 
 			if (m_Window->ShouldClose())
@@ -76,6 +86,15 @@ namespace Core {
 			// NOTE: rendering can be done elsewhere (eg. render thread)
 			for (const std::unique_ptr<Layer>& layer : m_LayerStack)
 				layer->OnRender();
+
+			m_ImGuiLayer->Begin();
+			{
+				//SE_PROFILE_SCOPE("LayerStack OnImGuiRender");
+
+				for (const std::unique_ptr<Layer>& layer : m_LayerStack)
+					layer->OnImGuiRender();
+			}
+			m_ImGuiLayer->End();
 
 			m_Window->Update();
 		}

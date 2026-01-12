@@ -2,15 +2,20 @@
 
 #include "GLUtils.h"
 
+#include "Core/Debug/Profiler.h"
+
 #include <iostream>
 #include <print>
 
 #include "stb_image.h"
 
+
 namespace Renderer {
 
 	Texture CreateTexture(int width, int height)
 	{
+		PROFILE_FUNC();
+
 		Texture result;
 		result.Width = width;
 		result.Height = height;
@@ -30,6 +35,8 @@ namespace Renderer {
 
 	Texture LoadTexture(const std::filesystem::path& path)
 	{
+		PROFILE_FUNC();
+
 		int width, height, channels;
 		std::string filepath = path.string();
 		stbi_set_flip_vertically_on_load(1);
@@ -69,6 +76,8 @@ namespace Renderer {
 
 	Framebuffer CreateFramebufferWithTexture(const Texture texture)
 	{
+		PROFILE_FUNC();
+
 		Framebuffer result;
 
 		glCreateFramebuffers(1, &result.Handle);
@@ -84,6 +93,8 @@ namespace Renderer {
 
 	bool AttachTextureToFramebuffer(Framebuffer& framebuffer, const Texture texture)
 	{
+		PROFILE_FUNC();
+
 		glNamedFramebufferTexture(framebuffer.Handle, GL_COLOR_ATTACHMENT0, texture.Handle, 0);
 
 		if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
@@ -98,12 +109,24 @@ namespace Renderer {
 
 	void BlitFramebufferToSwapchain(const Framebuffer framebuffer)
 	{
+		PROFILE_FUNC();
+
 		glBindFramebuffer(GL_READ_FRAMEBUFFER, framebuffer.Handle);
 		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0); // swapchain
 
 		glBlitFramebuffer(0, 0, framebuffer.ColorAttachment.Width, framebuffer.ColorAttachment.Height, // Source rect
 			0, 0, framebuffer.ColorAttachment.Width, framebuffer.ColorAttachment.Height,               // Destination rect
 			GL_COLOR_BUFFER_BIT, GL_NEAREST);
+	}
+
+	void Renderer::BeginFrame(int w, int h)
+	{
+		PROFILE_FUNC();
+
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		glViewport(0, 0, w, h);
+		glClearColor(0.05f, 0.05f, 0.05f, 1.0f);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 	}
 
 }

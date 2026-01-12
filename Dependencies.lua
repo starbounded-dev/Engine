@@ -63,6 +63,14 @@ Dependencies = {
 		LibName = "GLAD",
 		IncludeDir = "%{wks.location}/Core/vendor/GLAD/include",
 	},
+	ImGui = {
+		LibName = "ImGui",
+		IncludeDir = "%{wks.location}/Core/vendor/imgui",
+	},
+	Tracy = {
+		LibName = "Tracy",
+		IncludeDir = "%{wks.location}/Core/vendor/tracy/tracy/public",
+	},
 	GLM = {
 		IncludeDir = "%{wks.location}/Core/vendor/glm",
 	},
