@@ -1,6 +1,7 @@
 #pragma once
 #include "Core/Layer.h"
 #include "Core/Renderer/ShaderManager.h"
+#include "Core/Renderer/ShaderEditorInterface.h"
 #include <imgui.h>
 #include <string>
 #include <vector>
@@ -9,7 +10,7 @@
 namespace Editor
 {
     // Shader editor with syntax highlighting and live preview
-    class ShaderEditor
+    class ShaderEditor : public Core::Renderer::IShaderEditorInterface
     {
     public:
         ShaderEditor();
@@ -17,10 +18,10 @@ namespace Editor
 
         void OnImGuiRender();
         
-        // Load shader for editing
+        // Load shader for editing (IShaderEditorInterface implementation)
         void LoadShader(const std::string& name);
         void LoadShaderFiles(const std::filesystem::path& vertexPath, 
-                            const std::filesystem::path& fragmentPath);
+                            const std::filesystem::path& fragmentPath) override;
         
         // Enable/disable panel
         void SetEnabled(bool enabled) { m_Enabled = enabled; }

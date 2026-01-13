@@ -1,4 +1,5 @@
 #include "Material.h"
+#include "ShaderEditorInterface.h"
 
 #include <fstream>
 #include <sstream>
@@ -9,9 +10,6 @@
 
 // ImGui (you already have it if you have ImGuiLayer)
 #include <imgui.h>
-
-// Forward declare ShaderEditor to avoid circular dependency
-namespace Editor { class ShaderEditor; }
 
 namespace Core::Renderer
 {
@@ -670,11 +668,8 @@ namespace Core::Renderer
         if (!m_Res || m_Res->VertexPath.empty() || m_Res->FragmentPath.empty())
             return;
         
-        // Use the global ShaderEditor instance if available
-        // This requires the ShaderEditor header, but we use external linkage to avoid circular deps
-        extern Editor::ShaderEditor* GetShaderEditorInstance();
-        auto* editor = GetShaderEditorInstance();
-        
+        // Use the shader editor interface if available
+        auto* editor = GetShaderEditorInterface();
         if (editor)
         {
             editor->LoadShaderFiles(m_Res->VertexPath, m_Res->FragmentPath);

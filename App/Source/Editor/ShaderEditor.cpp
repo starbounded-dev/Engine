@@ -23,22 +23,15 @@ namespace Editor
     void ShaderEditor::SetInstance(ShaderEditor* instance)
     {
         s_Instance = instance;
+        // Also register with the Core layer interface
+        Core::Renderer::SetShaderEditorInterface(instance);
     }
     
     ShaderEditor* ShaderEditor::GetInstance()
     {
         return s_Instance;
     }
-}
 
-// External linkage function for Material to access ShaderEditor without circular dependency
-extern "C++" Editor::ShaderEditor* GetShaderEditorInstance()
-{
-    return Editor::ShaderEditor::GetInstance();
-}
-
-namespace Editor
-{
     void ShaderEditor::OnImGuiRender()
     {
         PROFILE_FUNC();
