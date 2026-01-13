@@ -254,4 +254,14 @@ namespace Core::Renderer
 
         return names;
     }
+    
+    const ShaderProgram* ShaderManager::GetShaderInfo(const std::string& name) const
+    {
+        auto it = m_Shaders.find(name);
+        if (it != m_Shaders.end())
+        {
+            return &it->second;
+        }
+        return nullptr;
+    }
 }

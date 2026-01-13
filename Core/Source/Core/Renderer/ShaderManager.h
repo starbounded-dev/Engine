@@ -64,6 +64,9 @@ namespace Core::Renderer
 
         // Get all shader names
         std::vector<std::string> GetShaderNames() const;
+        
+        // Get shader program info (for editor integration)
+        const ShaderProgram* GetShaderInfo(const std::string& name) const;
 
     private:
         ShaderManager() = default;

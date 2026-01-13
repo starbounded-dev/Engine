@@ -74,12 +74,26 @@ namespace Editor
 
         m_CurrentShaderName = name;
         
-        // Note: ShaderManager doesn't expose paths directly yet
-        // This is a placeholder - in a real implementation, you'd need to extend
-        // ShaderManager to provide access to shader file paths
-        m_CompilationError = "Shader loading from ShaderManager not fully implemented yet.\n";
-        m_CompilationError += "Please use LoadShaderFiles() with file paths directly.";
-        m_HasCompilationError = true;
+        // Get shader info from manager
+        const auto* shaderInfo = shaderMgr.GetShaderInfo(name);
+        if (!shaderInfo)
+        {
+            m_CompilationError = "Failed to get shader info for: " + name;
+            m_HasCompilationError = true;
+            return;
+        }
+        
+        // Check if it's a compute shader
+        if (shaderInfo->IsCompute)
+        {
+            m_CompilationError = "Compute shader editing not yet supported.\n";
+            m_CompilationError += "Only graphics shaders (vertex + fragment) can be edited.";
+            m_HasCompilationError = true;
+            return;
+        }
+        
+        // Load the shader files using their paths
+        LoadShaderFiles(shaderInfo->VertexPath, shaderInfo->FragmentPath);
     }
 
     void ShaderEditor::LoadShaderFiles(const std::filesystem::path& vertexPath, 
