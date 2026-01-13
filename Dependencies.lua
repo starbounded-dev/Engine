@@ -54,6 +54,12 @@ Dependencies = {
     Dwmapi = {
         LibName = "Dwmapi"
     },
+	Assimp = {
+		IncludeDir = "%{wks.location}/Core/vendor/assimp/include",
+		Windows = { LibName = "assimp-vc143-mt", DebugLibName = "assimp-vc143-mtd", LibDir = "%{wks.location}/Core/vendor/assimp/bin/windows/%{cfg.buildcfg}/" },
+		Linux = { LibName = "assimp", LibDir = "%{wks.location}/Core/vendor/assimp/bin/linux/" },
+		Configurations = "Debug,Release"
+	},
 	GLFW = {
 		-- No need to specify LibDir for GLFW since it's automatically handled by premake
 		LibName = "GLFW",
@@ -85,8 +91,6 @@ Dependencies = {
 	},
 }
 
-
--- NOTE(Peter): Probably don't touch these functions unless you know what you're doing (or just ask me if you need help extending them)
 
 function LinkDependency(table, is_debug, target)
 

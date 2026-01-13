@@ -29,6 +29,16 @@ project "App"
 		"../Core/vendor/"
 	}
 
+	filter { "system:windows", "configurations:Debug or configurations:Debug-AS" }
+		postbuildcommands {
+			'{COPY} "../Core/vendor/assimp/bin/windows/Debug/assimp-vc143-mtd.dll" "%{cfg.targetdir}"',
+		}
+
+	filter { "system:windows", "configurations:Release or configurations:Dist" }
+		postbuildcommands {
+			'{COPY} "../Core/vendor/assimp/bin/windows/Release/assimp-vc143-mt.dll" "%{cfg.targetdir}"',
+		}
+
 	filter "system:windows" 
 		systemversion "latest"
 		defines { "GLFW_INCLUDE_NONE"}
@@ -42,7 +52,6 @@ project "App"
 
 	filter "configurations:Debug or configurations:Debug-AS"
 		symbols "On"
-
 		ProcessDependencies("Debug")
 
 	filter { "system:windows", "configurations:Debug-AS" }

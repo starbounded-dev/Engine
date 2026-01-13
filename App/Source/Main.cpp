@@ -16,6 +16,6 @@ int main()
 	//application.PushLayer<AppLayer>();
 	//application.PushLayer<OverlayLayer>();
 	//application.PushLayer<Core::ImLayer>();
-	application.PushLayer<ExampleLayer>();
+	application.PushLayer<Sandbox::SponzaTestLayer>();
 	application.Run();
 }

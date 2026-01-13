@@ -1,216 +1,641 @@
 #include "Material.h"
 
-#include "Core/Debug/Profiler.h"
+#include <fstream>
+#include <sstream>
+#include <cassert>
+#include <algorithm>
 
-#include <iostream>
+#include <glm/gtc/type_ptr.hpp>
 
-namespace Core::Renderer {
+// ImGui (you already have it if you have ImGuiLayer)
+#include <imgui.h>
 
-	Material::Material()
-		: m_ShaderProgram(0)
-	{
-	}
+namespace Core::Renderer
+{
+    static std::string ReadTextFile(const std::string& path)
+    {
+        std::ifstream in(path, std::ios::in | std::ios::binary);
+        if (!in)
+            return {};
 
-	Material::Material(uint32_t shaderProgram)
-		: m_ShaderProgram(shaderProgram)
-	{
-	}
+        std::ostringstream ss;
+        ss << in.rdbuf();
+        return ss.str();
+    }
 
-	Material::Material(const std::filesystem::path& vertexPath, const std::filesystem::path& fragmentPath)
-	{
-		m_ShaderProgram = ::Renderer::CreateGraphicsShader(vertexPath, fragmentPath);
-	}
+    static GLuint Compile(GLenum stage, const std::string& src, const char* debugName)
+    {
+        GLuint sh = glCreateShader(stage);
+        const char* cstr = src.c_str();
+        glShaderSource(sh, 1, &cstr, nullptr);
+        glCompileShader(sh);
 
-	void Material::SetShader(uint32_t shaderProgram)
-	{
-		m_ShaderProgram = shaderProgram;
-		m_UniformLocationCache.clear(); // Clear cache when shader changes
-	}
+        GLint ok = 0;
+        glGetShaderiv(sh, GL_COMPILE_STATUS, &ok);
+        if (!ok)
+        {
+            GLint len = 0;
+            glGetShaderiv(sh, GL_INFO_LOG_LENGTH, &len);
+            std::string log((size_t)len, '\0');
+            glGetShaderInfoLog(sh, len, &len, log.data());
 
-	void Material::SetTexture(const std::string& name, const ::Renderer::Texture& texture, uint32_t slot)
-	{
-		m_Textures[name] = texture;
-		m_TextureSlots[name] = slot;
-	}
+            glDeleteShader(sh);
+            // Replace with your logger
+            assert(false && "Shader compile failed");
+        }
 
-	void Material::SetTexture(const std::string& name, GLuint textureHandle, uint32_t slot)
-	{
-		::Renderer::Texture texture;
-		texture.Handle = textureHandle;
-		m_Textures[name] = texture;
-		m_TextureSlots[name] = slot;
-	}
+        return sh;
+    }
 
-	const ::Renderer::Texture* Material::GetTexture(const std::string& name) const
-	{
-		auto it = m_Textures.find(name);
-		if (it != m_Textures.end())
-			return &it->second;
-		return nullptr;
-	}
+    static GLuint LinkProgram(GLuint vs, GLuint fs)
+    {
+        GLuint prog = glCreateProgram();
+        glAttachShader(prog, vs);
+        glAttachShader(prog, fs);
+        glLinkProgram(prog);
 
-	void Material::SetFloat(const std::string& name, float value)
-	{
-		int32_t location = GetUniformLocation(name);
-		if (location != -1)
-			glProgramUniform1f(m_ShaderProgram, location, value);
-	}
+        GLint ok = 0;
+        glGetProgramiv(prog, GL_LINK_STATUS, &ok);
+        if (!ok)
+        {
+            GLint len = 0;
+            glGetProgramiv(prog, GL_INFO_LOG_LENGTH, &len);
+            std::string log((size_t)len, '\0');
+            glGetProgramInfoLog(prog, len, &len, log.data());
 
-	void Material::SetFloat2(const std::string& name, const glm::vec2& value)
-	{
-		int32_t location = GetUniformLocation(name);
-		if (location != -1)
-			glProgramUniform2f(m_ShaderProgram, location, value.x, value.y);
-	}
+            glDeleteProgram(prog);
+            assert(false && "Program link failed");
+        }
 
-	void Material::SetFloat3(const std::string& name, const glm::vec3& value)
-	{
-		int32_t location = GetUniformLocation(name);
-		if (location != -1)
-			glProgramUniform3f(m_ShaderProgram, location, value.x, value.y, value.z);
-	}
+        glDetachShader(prog, vs);
+        glDetachShader(prog, fs);
+        return prog;
+    }
 
-	void Material::SetFloat4(const std::string& name, const glm::vec4& value)
-	{
-		int32_t location = GetUniformLocation(name);
-		if (location != -1)
-			glProgramUniform4f(m_ShaderProgram, location, value.x, value.y, value.z, value.w);
-	}
+    // ---------- Material ----------
 
-	void Material::SetMat3(const std::string& name, const glm::mat3& value)
-	{
-		int32_t location = GetUniformLocation(name);
-		if (location != -1)
-			glProgramUniformMatrix3fv(m_ShaderProgram, location, 1, GL_FALSE, glm::value_ptr(value));
-	}
+    Material::Material(const std::string& vertexPath, const std::string& fragmentPath)
+    {
+        m_Res = std::make_shared<MaterialResources>();
+        m_Res->VertexPath = vertexPath;
+        m_Res->FragmentPath = fragmentPath;
+        Rebuild();
+    }
 
-	void Material::SetMat4(const std::string& name, const glm::mat4& value)
-	{
-		int32_t location = GetUniformLocation(name);
-		if (location != -1)
-			glProgramUniformMatrix4fv(m_ShaderProgram, location, 1, GL_FALSE, glm::value_ptr(value));
-	}
+    Material::~Material()
+    {
+        Destroy();
+    }
 
-	void Material::SetInt(const std::string& name, int value)
-	{
-		int32_t location = GetUniformLocation(name);
-		if (location != -1)
-			glProgramUniform1i(m_ShaderProgram, location, value);
-	}
+    Material::Material(Material&& other) noexcept
+    {
+        *this = std::move(other);
+    }
 
-	void Material::SetInt2(const std::string& name, const glm::ivec2& value)
-	{
-		int32_t location = GetUniformLocation(name);
-		if (location != -1)
-			glProgramUniform2i(m_ShaderProgram, location, value.x, value.y);
-	}
+    Material& Material::operator=(Material&& other) noexcept
+    {
+        if (this == &other) return *this;
 
-	void Material::SetInt3(const std::string& name, const glm::ivec3& value)
-	{
-		int32_t location = GetUniformLocation(name);
-		if (location != -1)
-			glProgramUniform3i(m_ShaderProgram, location, value.x, value.y, value.z);
-	}
+        Destroy();
 
-	void Material::SetInt4(const std::string& name, const glm::ivec4& value)
-	{
-		int32_t location = GetUniformLocation(name);
-		if (location != -1)
-			glProgramUniform4i(m_ShaderProgram, location, value.x, value.y, value.z, value.w);
-	}
+        m_Res = std::move(other.m_Res);
+        m_MaterialUBO = std::move(other.m_MaterialUBO);
+        m_Values = std::move(other.m_Values);
+        m_Textures = std::move(other.m_Textures);
 
-	void Material::SetBool(const std::string& name, bool value)
-	{
-		int32_t location = GetUniformLocation(name);
-		if (location != -1)
-			glProgramUniform1i(m_ShaderProgram, location, value ? 1 : 0);
-	}
+        return *this;
+    }
 
-	void Material::SetUniformBuffer(const std::string& blockName, std::shared_ptr<UniformBuffer> ubo)
-	{
-		if (ubo)
-		{
-			m_UniformBuffers[blockName] = ubo;
-			UniformBuffer::BindUniformBlock(m_ShaderProgram, blockName, ubo->GetBindingPoint());
-		}
-		else
-		{
-			m_UniformBuffers.erase(blockName);
-		}
-	}
+    void Material::Destroy()
+    {
+        if (m_Res && m_Res->Program)
+        {
+            glDeleteProgram(m_Res->Program);
+            m_Res->Program = 0;
+        }
+    }
 
-	std::shared_ptr<UniformBuffer> Material::GetUniformBuffer(const std::string& blockName) const
-	{
-		auto it = m_UniformBuffers.find(blockName);
-		if (it != m_UniformBuffers.end())
-			return it->second;
-		return nullptr;
-	}
+    GLuint Material::GetProgram() const
+    {
+        return m_Res ? m_Res->Program : 0;
+    }
 
-	void Material::Bind() const
-	{
-		PROFILE_FUNC();
+    void Material::Rebuild()
+    {
+        const std::string vsrc = ReadTextFile(m_Res->VertexPath);
+        const std::string fsrc = ReadTextFile(m_Res->FragmentPath);
+        assert(!vsrc.empty() && !fsrc.empty());
 
-		if (m_ShaderProgram == 0)
-			return;
+        GLuint vs = Compile(GL_VERTEX_SHADER, vsrc, m_Res->VertexPath.c_str());
+        GLuint fs = Compile(GL_FRAGMENT_SHADER, fsrc, m_Res->FragmentPath.c_str());
+        GLuint prog = LinkProgram(vs, fs);
+        glDeleteShader(vs);
+        glDeleteShader(fs);
 
-		glUseProgram(m_ShaderProgram);
+        if (m_Res->Program)
+            glDeleteProgram(m_Res->Program);
+        m_Res->Program = prog;
 
-		// Bind textures
-		for (const auto& [name, texture] : m_Textures)
-		{
-			uint32_t slot = m_TextureSlots.at(name);
-			glBindTextureUnit(slot, texture.Handle);
+        // Reflect material block
+        m_Res->MaterialLayout = UniformBufferLayout::Reflect(prog, m_Res->MaterialBlockName);
 
-			// Set sampler uniform if it exists
-			int32_t location = GetUniformLocation(name);
-			if (location != -1)
-				glProgramUniform1i(m_ShaderProgram, location, static_cast<int>(slot));
-		}
+        // Create per-material UBO if block exists
+        if (m_Res->MaterialLayout.GetSize() > 0)
+        {
+            m_MaterialUBO = UniformBuffer(m_Res->MaterialLayout, UBOBinding::PerMaterial, true);
 
-		// Bind uniform buffers
-		for (const auto& [name, ubo] : m_UniformBuffers)
-		{
-			ubo->Bind();
-		}
-	}
+            // Seed default values map from reflection (zero init)
+            // (We don’t know “nice defaults” automatically, but editor needs keys.)
+            // Also: some drivers return "MaterialData.x" -> keep that key too.
+            // We'll normalize in ResolveMaterialUBOName().
+            // Grab keys:
+            // (Layout doesn't expose iteration; so you can either extend it later,
+            //  or just rely on Set* calls to populate m_Values.)
+        }
+    }
 
-	void Material::Clear()
-	{
-		m_Textures.clear();
-		m_TextureSlots.clear();
-		m_UniformBuffers.clear();
-		m_UniformLocationCache.clear();
-	}
+    bool Material::HasMaterialUBO(const std::string& name) const
+    {
+        if (m_Res->MaterialLayout.GetSize() == 0) return false;
+        return m_Res->MaterialLayout.Find(name) != nullptr
+            || m_Res->MaterialLayout.Find(m_Res->MaterialBlockName + "." + name) != nullptr;
+    }
 
-	int32_t Material::GetUniformLocation(const std::string& name) const
-	{
-		if (m_ShaderProgram == 0)
-			return -1;
+    std::string Material::ResolveMaterialUBOName(const std::string& name) const
+    {
+        if (m_Res->MaterialLayout.Find(name))
+            return name;
 
-		// Check cache first
-		auto it = m_UniformLocationCache.find(name);
-		if (it != m_UniformLocationCache.end())
-		{
-			return it->second;
-		}
+        std::string alt = m_Res->MaterialBlockName + "." + name;
+        if (m_Res->MaterialLayout.Find(alt))
+            return alt;
 
-		// Query OpenGL and cache
-		return CacheUniformLocation(name);
-	}
+        return name; // fallback (will go to glUniform path)
+    }
 
-	int32_t Material::CacheUniformLocation(const std::string& name) const
-	{
-		int32_t location = glGetUniformLocation(m_ShaderProgram, name.c_str());
-		m_UniformLocationCache[name] = location;
+    GLint Material::GetUniformLocationCached(const std::string& name) const
+    {
+        auto& cache = m_Res->UniformLocationCache;
+        auto it = cache.find(name);
+        if (it != cache.end())
+            return it->second;
 
-		if (location == -1)
-		{
-			// Optional: warn about missing uniforms (comment out for production)
-			// std::cerr << "Material::GetUniformLocation: Uniform '" << name << "' not found in shader!" << std::endl;
-		}
+        GLint loc = glGetUniformLocation(m_Res->Program, name.c_str());
+        cache[name] = loc;
+        return loc;
+    }
 
-		return location;
-	}
+    void Material::SetUniformFallback(const std::string& name, const MaterialValue& v) const
+    {
+        GLint loc = GetUniformLocationCached(name);
+        if (loc < 0) return;
 
+        glUseProgram(m_Res->Program);
+
+        std::visit([&](auto&& val)
+            {
+                using T = std::decay_t<decltype(val)>;
+
+                if constexpr (std::is_same_v<T, float>)        glUniform1f(loc, val);
+                else if constexpr (std::is_same_v<T, int32_t>) glUniform1i(loc, val);
+                else if constexpr (std::is_same_v<T, uint32_t>)glUniform1ui(loc, val);
+                else if constexpr (std::is_same_v<T, glm::vec2>) glUniform2fv(loc, 1, glm::value_ptr(val));
+                else if constexpr (std::is_same_v<T, glm::vec3>) glUniform3fv(loc, 1, glm::value_ptr(val));
+                else if constexpr (std::is_same_v<T, glm::vec4>) glUniform4fv(loc, 1, glm::value_ptr(val));
+                else if constexpr (std::is_same_v<T, glm::mat3>) glUniformMatrix3fv(loc, 1, GL_FALSE, glm::value_ptr(val));
+                else if constexpr (std::is_same_v<T, glm::mat4>) glUniformMatrix4fv(loc, 1, GL_FALSE, glm::value_ptr(val));
+            }, v);
+    }
+
+    void Material::SetFloat(const std::string& name, float v)
+    {
+        m_Values[name] = v;
+
+        if (HasMaterialUBO(name))
+            m_MaterialUBO.SetFloat(ResolveMaterialUBOName(name), v, true);
+        else
+            SetUniformFallback(name, m_Values[name]);
+    }
+
+    void Material::SetInt(const std::string& name, int32_t v)
+    {
+        m_Values[name] = v;
+
+        if (HasMaterialUBO(name))
+            m_MaterialUBO.SetInt(ResolveMaterialUBOName(name), v, true);
+        else
+            SetUniformFallback(name, m_Values[name]);
+    }
+
+    void Material::SetUInt(const std::string& name, uint32_t v)
+    {
+        m_Values[name] = v;
+
+        if (HasMaterialUBO(name))
+            m_MaterialUBO.SetUInt(ResolveMaterialUBOName(name), v, true);
+        else
+            SetUniformFallback(name, m_Values[name]);
+    }
+
+    void Material::SetVec2(const std::string& name, const glm::vec2& v)
+    {
+        m_Values[name] = v;
+        if (HasMaterialUBO(name))
+        {
+            float tmp[2] = { v.x, v.y };
+            m_MaterialUBO.SetVec2(ResolveMaterialUBOName(name), tmp, true);
+        }
+        else SetUniformFallback(name, m_Values[name]);
+    }
+
+    void Material::SetVec3(const std::string& name, const glm::vec3& v)
+    {
+        m_Values[name] = v;
+        if (HasMaterialUBO(name))
+        {
+            float tmp[3] = { v.x, v.y, v.z };
+            m_MaterialUBO.SetVec3(ResolveMaterialUBOName(name), tmp, true);
+        }
+        else SetUniformFallback(name, m_Values[name]);
+    }
+
+    void Material::SetVec4(const std::string& name, const glm::vec4& v)
+    {
+        m_Values[name] = v;
+        if (HasMaterialUBO(name))
+        {
+            float tmp[4] = { v.x, v.y, v.z, v.w };
+            m_MaterialUBO.SetVec4(ResolveMaterialUBOName(name), tmp, true);
+        }
+        else SetUniformFallback(name, m_Values[name]);
+    }
+
+    void Material::SetMat3(const std::string& name, const glm::mat3& v)
+    {
+        m_Values[name] = v;
+        if (HasMaterialUBO(name))
+            m_MaterialUBO.SetMat3(ResolveMaterialUBOName(name), glm::value_ptr(v), true);
+        else
+            SetUniformFallback(name, m_Values[name]);
+    }
+
+    void Material::SetMat4(const std::string& name, const glm::mat4& v)
+    {
+        m_Values[name] = v;
+        if (HasMaterialUBO(name))
+            m_MaterialUBO.SetMat4(ResolveMaterialUBOName(name), glm::value_ptr(v), true);
+        else
+            SetUniformFallback(name, m_Values[name]);
+    }
+
+    void Material::SetTexture(const std::string& samplerUniform, uint32_t slot, GLuint textureID, GLenum target)
+    {
+        // Update or add
+        auto it = std::find_if(m_Textures.begin(), m_Textures.end(),
+            [&](const TextureBinding& b) { return b.Uniform == samplerUniform; });
+
+        if (it == m_Textures.end())
+            m_Textures.push_back({ samplerUniform, slot, textureID, target });
+        else
+        {
+            it->Slot = slot;
+            it->TextureID = textureID;
+            it->Target = target;
+        }
+    }
+
+    void Material::BindTextures() const
+    {
+        for (const auto& t : m_Textures)
+        {
+            if (t.TextureID == 0) continue;
+
+            // bind texture id to unit
+            glBindTextureUnit(t.Slot, t.TextureID);
+
+            // set sampler uniform to the unit (cached)
+            GLint loc = GetUniformLocationCached(t.Uniform);
+            if (loc >= 0)
+                glUniform1i(loc, (GLint)t.Slot);
+        }
+    }
+
+    void Material::Bind() const
+    {
+        glUseProgram(m_Res->Program);
+
+        // Bind per-material UBO (binding = 2) if present
+        if (m_Res->MaterialLayout.GetSize() > 0)
+            m_MaterialUBO.BindBase();
+
+        // Bind textures + sampler uniforms
+        BindTextures();
+    }
+
+    std::shared_ptr<MaterialInstance> Material::CreateInstance() const
+    {
+        return std::make_shared<MaterialInstance>(std::shared_ptr<const Material>(m_Res ? this->shared_from_this() : nullptr));
+    }
+
+    // NOTE: If you don't have enable_shared_from_this on Material, use this safer version:
+    // (I’ll keep it simple below by implementing instance ctor from raw program path.)
+    // You can change CreateInstance() to:
+    // return std::make_shared<MaterialInstance>(std::make_shared<Material>(*this));  // deep copy (not ideal)
+    // Better: make Material inherit enable_shared_from_this<Material>.
+
+    void Material::OnImGuiRender(const char* label)
+    {
+        const char* hdr = label ? label : "Material";
+        if (!ImGui::CollapsingHeader(hdr))
+            return;
+
+        ImGui::Text("Shader:");
+        ImGui::BulletText("VS: %s", m_Res->VertexPath.c_str());
+        ImGui::BulletText("FS: %s", m_Res->FragmentPath.c_str());
+
+        if (ImGui::TreeNode("Parameters"))
+        {
+            for (auto& [name, val] : m_Values)
+            {
+                // Heuristic: treat *Color* as color
+                bool isColor = (name.find("Color") != std::string::npos) || (name.find("color") != std::string::npos);
+
+                std::visit([&](auto&& v)
+                    {
+                        using T = std::decay_t<decltype(v)>;
+
+                        if constexpr (std::is_same_v<T, float>)
+                        {
+                            float tmp = v;
+                            if (ImGui::DragFloat(name.c_str(), &tmp, 0.01f))
+                                SetFloat(name, tmp);
+                        }
+                        else if constexpr (std::is_same_v<T, int32_t>)
+                        {
+                            int tmp = (int)v;
+                            if (ImGui::DragInt(name.c_str(), &tmp, 1.0f))
+                                SetInt(name, tmp);
+                        }
+                        else if constexpr (std::is_same_v<T, uint32_t>)
+                        {
+                            int tmp = (int)v;
+                            if (ImGui::DragInt(name.c_str(), &tmp, 1.0f))
+                                SetUInt(name, (uint32_t)std::max(tmp, 0));
+                        }
+                        else if constexpr (std::is_same_v<T, glm::vec2>)
+                        {
+                            glm::vec2 tmp = v;
+                            if (ImGui::DragFloat2(name.c_str(), glm::value_ptr(tmp), 0.01f))
+                                SetVec2(name, tmp);
+                        }
+                        else if constexpr (std::is_same_v<T, glm::vec3>)
+                        {
+                            glm::vec3 tmp = v;
+                            bool changed = isColor
+                                ? ImGui::ColorEdit3(name.c_str(), glm::value_ptr(tmp))
+                                : ImGui::DragFloat3(name.c_str(), glm::value_ptr(tmp), 0.01f);
+                            if (changed) SetVec3(name, tmp);
+                        }
+                        else if constexpr (std::is_same_v<T, glm::vec4>)
+                        {
+                            glm::vec4 tmp = v;
+                            bool changed = isColor
+                                ? ImGui::ColorEdit4(name.c_str(), glm::value_ptr(tmp))
+                                : ImGui::DragFloat4(name.c_str(), glm::value_ptr(tmp), 0.01f);
+                            if (changed) SetVec4(name, tmp);
+                        }
+                        else if constexpr (std::is_same_v<T, glm::mat3>)
+                        {
+                            ImGui::Text("%s (mat3)", name.c_str());
+                        }
+                        else if constexpr (std::is_same_v<T, glm::mat4>)
+                        {
+                            ImGui::Text("%s (mat4)", name.c_str());
+                        }
+                    }, val);
+            }
+            ImGui::TreePop();
+        }
+
+        if (ImGui::TreeNode("Textures"))
+        {
+            for (auto& t : m_Textures)
+            {
+                ImGui::Text("%s -> slot %u (id %u)", t.Uniform.c_str(), t.Slot, (unsigned)t.TextureID);
+            }
+            ImGui::TreePop();
+        }
+    }
+
+    // ---------- MaterialInstance ----------
+    // NOTE: For clean sharing, make Material inherit std::enable_shared_from_this<Material>.
+    // Here we keep it simple: instance stores base pointer and clones UBO layout.
+
+    MaterialInstance::MaterialInstance(std::shared_ptr<const Material> base)
+        : m_Base(std::move(base))
+    {
+        assert(m_Base);
+
+        const auto& layout = m_Base->m_Res->MaterialLayout;
+        if (layout.GetSize() > 0)
+            m_InstanceUBO = UniformBuffer(layout, UBOBinding::PerMaterial, true);
+    }
+
+    bool MaterialInstance::HasMaterialUBO(const std::string& name) const
+    {
+        const auto& layout = m_Base->m_Res->MaterialLayout;
+        if (layout.GetSize() == 0) return false;
+
+        return layout.Find(name) != nullptr
+            || layout.Find(m_Base->m_Res->MaterialBlockName + "." + name) != nullptr;
+    }
+
+    std::string MaterialInstance::ResolveMaterialUBOName(const std::string& name) const
+    {
+        const auto& layout = m_Base->m_Res->MaterialLayout;
+        if (layout.Find(name)) return name;
+
+        std::string alt = m_Base->m_Res->MaterialBlockName + "." + name;
+        if (layout.Find(alt)) return alt;
+
+        return name;
+    }
+
+    void MaterialInstance::SetFloat(const std::string& name, float v)
+    {
+        m_Overrides[name] = v;
+        if (HasMaterialUBO(name))
+            m_InstanceUBO.SetFloat(ResolveMaterialUBOName(name), v, true);
+        else
+            m_Base->SetUniformFallback(name, m_Overrides[name]);
+    }
+
+    void MaterialInstance::SetInt(const std::string& name, int32_t v)
+    {
+        m_Overrides[name] = v;
+        if (HasMaterialUBO(name))
+            m_InstanceUBO.SetInt(ResolveMaterialUBOName(name), v, true);
+        else
+            m_Base->SetUniformFallback(name, m_Overrides[name]);
+    }
+
+    void MaterialInstance::SetUInt(const std::string& name, uint32_t v)
+    {
+        m_Overrides[name] = v;
+        if (HasMaterialUBO(name))
+            m_InstanceUBO.SetUInt(ResolveMaterialUBOName(name), v, true);
+        else
+            m_Base->SetUniformFallback(name, m_Overrides[name]);
+    }
+
+    void MaterialInstance::SetVec2(const std::string& name, const glm::vec2& v)
+    {
+        m_Overrides[name] = v;
+        if (HasMaterialUBO(name))
+        {
+            float tmp[2] = { v.x, v.y };
+            m_InstanceUBO.SetVec2(ResolveMaterialUBOName(name), tmp, true);
+        }
+        else m_Base->SetUniformFallback(name, m_Overrides[name]);
+    }
+
+    void MaterialInstance::SetVec3(const std::string& name, const glm::vec3& v)
+    {
+        m_Overrides[name] = v;
+        if (HasMaterialUBO(name))
+        {
+            float tmp[3] = { v.x, v.y, v.z };
+            m_InstanceUBO.SetVec3(ResolveMaterialUBOName(name), tmp, true);
+        }
+        else m_Base->SetUniformFallback(name, m_Overrides[name]);
+    }
+
+    void MaterialInstance::SetVec4(const std::string& name, const glm::vec4& v)
+    {
+        m_Overrides[name] = v;
+        if (HasMaterialUBO(name))
+        {
+            float tmp[4] = { v.x, v.y, v.z, v.w };
+            m_InstanceUBO.SetVec4(ResolveMaterialUBOName(name), tmp, true);
+        }
+        else m_Base->SetUniformFallback(name, m_Overrides[name]);
+    }
+
+    void MaterialInstance::SetMat3(const std::string& name, const glm::mat3& v)
+    {
+        m_Overrides[name] = v;
+        if (HasMaterialUBO(name))
+            m_InstanceUBO.SetMat3(ResolveMaterialUBOName(name), glm::value_ptr(v), true);
+        else
+            m_Base->SetUniformFallback(name, m_Overrides[name]);
+    }
+
+    void MaterialInstance::SetMat4(const std::string& name, const glm::mat4& v)
+    {
+        m_Overrides[name] = v;
+        if (HasMaterialUBO(name))
+            m_InstanceUBO.SetMat4(ResolveMaterialUBOName(name), glm::value_ptr(v), true);
+        else
+            m_Base->SetUniformFallback(name, m_Overrides[name]);
+    }
+
+    void MaterialInstance::SetTexture(const std::string& samplerUniform, uint32_t slot, GLuint textureID, GLenum target)
+    {
+        auto it = std::find_if(m_TextureOverrides.begin(), m_TextureOverrides.end(),
+            [&](const TextureBinding& b) { return b.Uniform == samplerUniform; });
+
+        if (it == m_TextureOverrides.end())
+            m_TextureOverrides.push_back({ samplerUniform, slot, textureID, target });
+        else
+        {
+            it->Slot = slot;
+            it->TextureID = textureID;
+            it->Target = target;
+        }
+    }
+
+    void MaterialInstance::BindTextures() const
+    {
+        // Base textures first
+        for (const auto& t : m_Base->GetTextures())
+        {
+            if (t.TextureID == 0) continue;
+            glBindTextureUnit(t.Slot, t.TextureID);
+            GLint loc = m_Base->GetUniformLocationCached(t.Uniform);
+            if (loc >= 0) glUniform1i(loc, (GLint)t.Slot);
+        }
+
+        // Overrides
+        for (const auto& t : m_TextureOverrides)
+        {
+            if (t.TextureID == 0) continue;
+            glBindTextureUnit(t.Slot, t.TextureID);
+            GLint loc = m_Base->GetUniformLocationCached(t.Uniform);
+            if (loc >= 0) glUniform1i(loc, (GLint)t.Slot);
+        }
+    }
+
+    void MaterialInstance::Bind() const
+    {
+        glUseProgram(m_Base->GetProgram());
+
+        if (m_Base->m_Res->MaterialLayout.GetSize() > 0)
+            m_InstanceUBO.BindBase();
+
+        BindTextures();
+    }
+
+    void MaterialInstance::OnImGuiRender(const char* label)
+    {
+        const char* hdr = label ? label : "MaterialInstance";
+        if (!ImGui::CollapsingHeader(hdr))
+            return;
+
+        if (ImGui::TreeNode("Overrides"))
+        {
+            for (auto& [name, val] : m_Overrides)
+            {
+                std::visit([&](auto&& v)
+                    {
+                        using T = std::decay_t<decltype(v)>;
+
+                        if constexpr (std::is_same_v<T, float>)
+                        {
+                            float tmp = v;
+                            if (ImGui::DragFloat(name.c_str(), &tmp, 0.01f))
+                                SetFloat(name, tmp);
+                        }
+                        else if constexpr (std::is_same_v<T, int32_t>)
+                        {
+                            int tmp = (int)v;
+                            if (ImGui::DragInt(name.c_str(), &tmp, 1.0f))
+                                SetInt(name, tmp);
+                        }
+                        else if constexpr (std::is_same_v<T, glm::vec2>)
+                        {
+                            glm::vec2 tmp = v;
+                            if (ImGui::DragFloat2(name.c_str(), glm::value_ptr(tmp), 0.01f))
+                                SetVec2(name, tmp);
+                        }
+                        else if constexpr (std::is_same_v<T, glm::vec3>)
+                        {
+                            glm::vec3 tmp = v;
+                            if (ImGui::DragFloat3(name.c_str(), glm::value_ptr(tmp), 0.01f))
+                                SetVec3(name, tmp);
+                        }
+                        else if constexpr (std::is_same_v<T, glm::vec4>)
+                        {
+                            glm::vec4 tmp = v;
+                            if (ImGui::DragFloat4(name.c_str(), glm::value_ptr(tmp), 0.01f))
+                                SetVec4(name, tmp);
+                        }
+                        else
+                        {
+                            ImGui::Text("%s (non-editable type here)", name.c_str());
+                        }
+                    }, val);
+            }
+            ImGui::TreePop();
+        }
+    }
 }

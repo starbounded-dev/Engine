@@ -1,76 +1,153 @@
 #pragma once
-
-#include "Renderer.h"
-#include "Shader.h"
-#include "UniformBuffer.h"
+#include <string>
+#include <unordered_map>
+#include <memory>
+#include <variant>
+#include <vector>
+#include <cstdint>
 
 #include <glad/glad.h>
 #include <glm/glm.hpp>
-#include <glm/gtc/type_ptr.hpp>
 
-#include <unordered_map>
-#include <string>
-#include <vector>
-#include <filesystem>
-#include <memory>
+#include "Core/Renderer/UniformBuffer.h"
 
-namespace Core::Renderer {
+namespace Core::Renderer
+{
+    class Material;
 
-	class Material
-	{
-	public:
-		Material();
-		explicit Material(uint32_t shaderProgram);
-		Material(const std::filesystem::path& vertexPath, const std::filesystem::path& fragmentPath);
-		~Material() = default;
+    using MaterialValue = std::variant<
+        float, int32_t, uint32_t,
+        glm::vec2, glm::vec3, glm::vec4,
+        glm::mat3, glm::mat4
+    >;
 
-		Material(const Material&) = default;
-		Material& operator=(const Material&) = default;
+    struct TextureBinding
+    {
+        std::string Uniform;     // sampler uniform name, e.g. "u_Albedo"
+        uint32_t    Slot = 0;    // texture unit
+        GLuint      TextureID = 0;
+        GLenum      Target = GL_TEXTURE_2D;
+    };
 
-		Material(Material&&) = default;
-		Material& operator=(Material&&) = default;
+    // Shared GPU resources (shader program + reflection info)
+    struct MaterialResources
+    {
+        GLuint Program = 0;
 
-		// Shader
-		void SetShader(uint32_t shaderProgram);
-		uint32_t GetShader() const { return m_ShaderProgram; }
+        std::string VertexPath;
+        std::string FragmentPath;
 
-		// Texture slots
-		void SetTexture(const std::string& name, const ::Renderer::Texture& texture, uint32_t slot = 0);
-		void SetTexture(const std::string& name, GLuint textureHandle, uint32_t slot = 0);
-		const ::Renderer::Texture* GetTexture(const std::string& name) const;
+        std::string MaterialBlockName = "MaterialData";
+        UniformBufferLayout MaterialLayout;
 
-		// Uniform setters
-		void SetFloat(const std::string& name, float value);
-		void SetFloat2(const std::string& name, const glm::vec2& value);
-		void SetFloat3(const std::string& name, const glm::vec3& value);
-		void SetFloat4(const std::string& name, const glm::vec4& value);
-		void SetMat3(const std::string& name, const glm::mat3& value);
-		void SetMat4(const std::string& name, const glm::mat4& value);
-		void SetInt(const std::string& name, int value);
-		void SetInt2(const std::string& name, const glm::ivec2& value);
-		void SetInt3(const std::string& name, const glm::ivec3& value);
-		void SetInt4(const std::string& name, const glm::ivec4& value);
-		void SetBool(const std::string& name, bool value);
+        // Cache for non-UBO uniforms (samplers, misc)
+        mutable std::unordered_map<std::string, GLint> UniformLocationCache;
+    };
 
-		// Uniform Buffer Objects
-		void SetUniformBuffer(const std::string& blockName, std::shared_ptr<UniformBuffer> ubo);
-		std::shared_ptr<UniformBuffer> GetUniformBuffer(const std::string& blockName) const;
+    class MaterialInstance;
 
-		// Bind material for rendering
-		void Bind() const;
+    class Material : public std::enable_shared_from_this<Material>
+    {
+    	friend class MaterialInstance;
 
-		// Clear all textures and uniforms
-		void Clear();
+    public:
+        Material() = default;
+        Material(const std::string& vertexPath, const std::string& fragmentPath);
+        ~Material();
 
-	private:
-		int32_t GetUniformLocation(const std::string& name) const;
-		int32_t CacheUniformLocation(const std::string& name) const;
+        Material(const Material&) = delete;
+        Material& operator=(const Material&) = delete;
 
-		uint32_t m_ShaderProgram = 0;
-		mutable std::unordered_map<std::string, int32_t> m_UniformLocationCache;
-		std::unordered_map<std::string, ::Renderer::Texture> m_Textures;
-		std::unordered_map<std::string, uint32_t> m_TextureSlots; // Texture name -> slot
-		std::unordered_map<std::string, std::shared_ptr<UniformBuffer>> m_UniformBuffers;
-	};
+        Material(Material&&) noexcept;
+        Material& operator=(Material&&) noexcept;
 
+        void Bind() const;
+
+        // UBO-backed parameters (MaterialData). If not found in block, falls back to glUniform.
+        void SetFloat(const std::string& name, float v);
+        void SetInt(const std::string& name, int32_t v);
+        void SetUInt(const std::string& name, uint32_t v);
+        void SetVec2(const std::string& name, const glm::vec2& v);
+        void SetVec3(const std::string& name, const glm::vec3& v);
+        void SetVec4(const std::string& name, const glm::vec4& v);
+        void SetMat3(const std::string& name, const glm::mat3& v);
+        void SetMat4(const std::string& name, const glm::mat4& v);
+
+        // Texture binding (samplers)
+        // If slot not used yet, pass whatever slot you want (0..)
+        void SetTexture(const std::string& samplerUniform, uint32_t slot, GLuint textureID, GLenum target = GL_TEXTURE_2D);
+
+        // Instancing: share shader + defaults, but instance can override params/textures
+        std::shared_ptr<MaterialInstance> CreateInstance() const;
+
+        // ImGui material editor (basic)
+        void OnImGuiRender(const char* label = nullptr);
+
+        // Access
+        GLuint GetProgram() const;
+        const std::unordered_map<std::string, MaterialValue>& GetValues() const { return m_Values; }
+        const std::vector<TextureBinding>& GetTextures() const { return m_Textures; }
+
+    public:
+        void Rebuild(); // compile + link + reflect
+        void Destroy();
+
+        // UBO helpers (try name, then "MaterialData.name")
+        bool HasMaterialUBO(const std::string& name) const;
+        std::string ResolveMaterialUBOName(const std::string& name) const;
+
+        // Non-UBO uniform helpers
+        GLint GetUniformLocationCached(const std::string& name) const;
+        void SetUniformFallback(const std::string& name, const MaterialValue& v) const;
+
+        // Apply texture sampler uniforms + bind textures
+        void BindTextures() const;
+
+    private:
+        std::shared_ptr<MaterialResources> m_Res;
+
+        // Per-material buffer (binding = 2)
+        UniformBuffer m_MaterialUBO;
+
+        // Defaults (editor reads these)
+        std::unordered_map<std::string, MaterialValue> m_Values;
+        std::vector<TextureBinding> m_Textures;
+    };
+
+    class MaterialInstance
+    {
+    public:
+        explicit MaterialInstance(std::shared_ptr<const Material> base);
+
+        void Bind() const;
+
+        void SetFloat(const std::string& name, float v);
+        void SetInt(const std::string& name, int32_t v);
+        void SetUInt(const std::string& name, uint32_t v);
+        void SetVec2(const std::string& name, const glm::vec2& v);
+        void SetVec3(const std::string& name, const glm::vec3& v);
+        void SetVec4(const std::string& name, const glm::vec4& v);
+        void SetMat3(const std::string& name, const glm::mat3& v);
+        void SetMat4(const std::string& name, const glm::mat4& v);
+
+        void SetTexture(const std::string& samplerUniform, uint32_t slot, GLuint textureID, GLenum target = GL_TEXTURE_2D);
+
+        void OnImGuiRender(const char* label = nullptr);
+
+    private:
+        bool HasMaterialUBO(const std::string& name) const;
+        std::string ResolveMaterialUBOName(const std::string& name) const;
+
+        void BindTextures() const;
+
+    private:
+        std::shared_ptr<const Material> m_Base;
+
+        // Instance overrides (only what you set)
+        std::unordered_map<std::string, MaterialValue> m_Overrides;
+        std::vector<TextureBinding> m_TextureOverrides;
+
+        // Each instance has its own material UBO bound at binding=2 before draw
+        UniformBuffer m_InstanceUBO;
+    };
 }
