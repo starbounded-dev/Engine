@@ -2,10 +2,12 @@
 #include "Core/Layer.h"
 #include "Core/Renderer/ShaderManager.h"
 #include "Core/Renderer/ShaderEditorInterface.h"
+#include "Core/Renderer/Viewport.h"
 #include <imgui.h>
 #include <string>
 #include <vector>
 #include <filesystem>
+#include <memory>
 
 namespace Editor
 {
@@ -87,6 +89,11 @@ namespace Editor
         bool m_ShowErrorDisplay = true;
         bool m_ShowPreview = false;
         float m_ShaderListWidth = 200.0f;
+        
+        // Preview state
+        std::unique_ptr<Core::Renderer::Viewport> m_PreviewViewport;
+        float m_PreviewRotation = 0.0f;
+        enum class PreviewShape { Sphere, Cube } m_PreviewShape = PreviewShape::Sphere;
         
         // Static instance for global access
         static ShaderEditor* s_Instance;

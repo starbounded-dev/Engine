@@ -15,6 +15,9 @@ namespace Editor
         m_VertexShaderBuffer[0] = '\0';
         m_FragmentShaderBuffer[0] = '\0';
         
+        // Create preview viewport
+        m_PreviewViewport = std::make_unique<Core::Renderer::Viewport>(512, 512);
+        
         // Get available shaders from manager
         auto& shaderMgr = Core::Renderer::ShaderManager::Get();
         m_AvailableShaders = shaderMgr.GetShaderNames();
@@ -293,9 +296,75 @@ namespace Editor
         ImGui::Text("Shader Preview:");
         ImGui::Separator();
         
-        // Placeholder for actual preview
-        ImGui::TextWrapped("Live shader preview would render here with a test scene.");
-        ImGui::TextWrapped("This requires setting up a render target and test geometry.");
+        // Check if we have a shader loaded
+        if (m_CurrentShaderName.empty())
+        {
+            ImGui::TextWrapped("Load a shader to see live preview.");
+            return;
+        }
+        
+        // Preview shape selection
+        const char* shapes[] = { "Sphere", "Cube" };
+        int currentShape = (int)m_PreviewShape;
+        if (ImGui::Combo("Preview Shape", &currentShape, shapes, IM_ARRAYSIZE(shapes)))
+        {
+            m_PreviewShape = (PreviewShape)currentShape;
+        }
+        
+        ImGui::Text("Rotation:");
+        ImGui::SliderFloat("##PreviewRotation", &m_PreviewRotation, 0.0f, 360.0f);
+        
+        // Auto-rotate option
+        static bool autoRotate = false;
+        ImGui::Checkbox("Auto Rotate", &autoRotate);
+        if (autoRotate)
+        {
+            m_PreviewRotation += 0.5f;
+            if (m_PreviewRotation >= 360.0f)
+                m_PreviewRotation -= 360.0f;
+        }
+        
+        // 3D Preview viewport
+        ImGui::BeginChild("PreviewViewport", ImVec2(0, 300), true, ImGuiWindowFlags_NoScrollbar);
+        
+        ImVec2 viewportSize = ImGui::GetContentRegionAvail();
+        
+        // Get the shader material from ShaderManager
+        auto& shaderMgr = Core::Renderer::ShaderManager::Get();
+        // For preview, we'd need to create a temporary material with the shader
+        // This is simplified - in production you'd create a preview material
+        
+        if (viewportSize.x > 0 && viewportSize.y > 0)
+        {
+            uint32_t width = (uint32_t)viewportSize.x;
+            uint32_t height = (uint32_t)viewportSize.y;
+            
+            if (m_PreviewViewport->GetWidth() != width || m_PreviewViewport->GetHeight() != height)
+            {
+                m_PreviewViewport->Resize(width, height);
+            }
+            
+            // Note: This is a placeholder. To actually render, you'd need to:
+            // 1. Create a Material from the current shader
+            // 2. Pass it to RenderPreviewSphere/Cube
+            // For now, just show the viewport texture
+            ImGui::Image((ImTextureID)(uintptr_t)m_PreviewViewport->GetColorAttachment(),
+                        viewportSize, ImVec2(0, 1), ImVec2(1, 0)); // Flip Y for OpenGL
+            
+            ImGui::TextWrapped("Note: Preview requires material creation from shader.");
+        }
+        else
+        {
+            ImGui::Text("Resize window to show preview");
+        }
+        
+        ImGui::EndChild();
+        
+        if (ImGui::Button("Reset Camera"))
+        {
+            m_PreviewRotation = 0.0f;
+            autoRotate = false;
+        }
     }
 
     void ShaderEditor::RenderStatusBar()

@@ -1,4 +1,5 @@
 #include "StatsPanel.h"
+#include "Core/Debug/Memory.h"
 #include <algorithm>
 #include <sstream>
 #include <iomanip>
@@ -109,20 +110,16 @@ namespace Editor
     {
         if (ImGui::CollapsingHeader("Memory Statistics", ImGuiTreeNodeFlags_DefaultOpen))
         {
+            // Get real memory stats from Memory system
+            auto textureStats = Core::Debug::Memory::GetStats(Core::Debug::MemoryCategory::Texture);
+            auto bufferStats = Core::Debug::Memory::GetStats(Core::Debug::MemoryCategory::Buffer);
+            auto gpuStats = Core::Debug::Memory::GetGPUStats();
+            
             // Texture memory
             ImGui::Text("Texture Memory");
             ImGui::Indent();
-            ImGui::Text("Used: %s", FormatBytes(m_CurrentStats.TextureMemoryUsed).c_str());
-            ImGui::Text("Allocated: %s", FormatBytes(m_CurrentStats.TextureMemoryAllocated).c_str());
-            ImGui::Text("Textures: %u", m_CurrentStats.TextureCount);
-            
-            // Progress bar for texture memory
-            if (m_CurrentStats.TextureMemoryAllocated > 0)
-            {
-                float usage = (float)m_CurrentStats.TextureMemoryUsed / (float)m_CurrentStats.TextureMemoryAllocated;
-                ImGui::ProgressBar(usage, ImVec2(-1.0f, 0.0f), 
-                    (std::to_string((int)(usage * 100)) + "%").c_str());
-            }
+            ImGui::Text("Used: %s", FormatBytes(textureStats.CurrentUsage).c_str());
+            ImGui::Text("Allocations: %zu", textureStats.AllocationCount);
             ImGui::Unindent();
             
             ImGui::Separator();
@@ -130,17 +127,49 @@ namespace Editor
             // Buffer memory
             ImGui::Text("Buffer Memory");
             ImGui::Indent();
-            ImGui::Text("Used: %s", FormatBytes(m_CurrentStats.BufferMemoryUsed).c_str());
-            ImGui::Text("Vertex Buffers: %u", m_CurrentStats.VertexBufferCount);
-            ImGui::Text("Index Buffers: %u", m_CurrentStats.IndexBufferCount);
-            ImGui::Text("Uniform Buffers: %u", m_CurrentStats.UniformBufferCount);
+            ImGui::Text("Used: %s", FormatBytes(bufferStats.CurrentUsage).c_str());
+            ImGui::Text("Allocations: %zu", bufferStats.AllocationCount);
             ImGui::Unindent();
             
             ImGui::Separator();
             
-            // Total memory
-            uint64_t totalMemory = m_CurrentStats.TextureMemoryUsed + m_CurrentStats.BufferMemoryUsed;
-            ImGui::Text("Total GPU Memory: %s", FormatBytes(totalMemory).c_str());
+            // GPU memory (from OpenGL queries)
+            if (gpuStats.TotalMemoryKB > 0)
+            {
+                ImGui::Text("GPU Memory (from driver)");
+                ImGui::Indent();
+                ImGui::Text("Total: %s", FormatBytes(gpuStats.TotalMemoryKB * 1024).c_str());
+                ImGui::Text("Used: %s", FormatBytes(gpuStats.CurrentUsageKB * 1024).c_str());
+                ImGui::Text("Available: %s", FormatBytes(gpuStats.AvailableMemoryKB * 1024).c_str());
+                
+                // Progress bar
+                if (gpuStats.TotalMemoryKB > 0)
+                {
+                    float usage = (float)gpuStats.CurrentUsageKB / (float)gpuStats.TotalMemoryKB;
+                    ImVec4 color = usage > 0.9f ? ImVec4(1.0f, 0.0f, 0.0f, 1.0f) : 
+                                  (usage > 0.7f ? ImVec4(1.0f, 1.0f, 0.0f, 1.0f) : 
+                                   ImVec4(0.0f, 1.0f, 0.0f, 1.0f));
+                    ImGui::PushStyleColor(ImGuiCol_PlotHistogram, color);
+                    ImGui::ProgressBar(usage, ImVec2(-1.0f, 0.0f), 
+                        (std::to_string((int)(usage * 100)) + "%").c_str());
+                    ImGui::PopStyleColor();
+                }
+                
+                // NVIDIA specific stats
+                if (gpuStats.EvictionCount > 0)
+                {
+                    ImGui::Text("Evictions: %llu (%s evicted)", 
+                        gpuStats.EvictionCount,
+                        FormatBytes(gpuStats.EvictedMemoryKB * 1024).c_str());
+                }
+                ImGui::Unindent();
+            }
+            
+            ImGui::Separator();
+            
+            // Total tracked memory
+            uint64_t totalMemory = textureStats.CurrentUsage + bufferStats.CurrentUsage;
+            ImGui::Text("Total Tracked Memory: %s", FormatBytes(totalMemory).c_str());
         }
     }
 

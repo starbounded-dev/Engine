@@ -1,6 +1,7 @@
 #pragma once
 #include "Core/Layer.h"
 #include "Core/Renderer/Material.h"
+#include "Core/Renderer/Viewport.h"
 #include <imgui.h>
 #include <memory>
 #include <vector>
@@ -94,5 +95,7 @@ namespace Editor
         // Preview state
         bool m_ShowPreviewWindow = false;
         float m_PreviewRotation = 0.0f;
+        std::unique_ptr<Core::Renderer::Viewport> m_PreviewViewport;
+        enum class PreviewShape { Sphere, Cube } m_PreviewShape = PreviewShape::Sphere;
     };
 }

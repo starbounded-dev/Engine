@@ -6,6 +6,9 @@ namespace Editor
 {
     MaterialEditor::MaterialEditor()
     {
+        // Create preview viewport
+        m_PreviewViewport = std::make_unique<Core::Renderer::Viewport>(512, 512);
+        
         // Add some default templates
         MaterialTemplate unlitTemplate;
         unlitTemplate.Name = "Unlit";
@@ -304,29 +307,75 @@ namespace Editor
 
     void MaterialEditor::RenderLivePreview()
     {
+        if (!m_CurrentMaterial)
+            return;
+            
         ImGui::Text("Live Preview");
         ImGui::Separator();
+        
+        // Preview shape selection
+        const char* shapes[] = { "Sphere", "Cube" };
+        int currentShape = (int)m_PreviewShape;
+        if (ImGui::Combo("Preview Shape", &currentShape, shapes, IM_ARRAYSIZE(shapes)))
+        {
+            m_PreviewShape = (PreviewShape)currentShape;
+        }
         
         ImGui::Text("Preview Rotation:");
         ImGui::SliderFloat("##PreviewRotation", &m_PreviewRotation, 0.0f, 360.0f);
         
-        // Placeholder for 3D preview rendering
-        ImGui::BeginChild("PreviewViewport", ImVec2(0, 300), true, ImGuiWindowFlags_NoScrollbar);
+        // Auto-rotate option
+        static bool autoRotate = false;
+        ImGui::Checkbox("Auto Rotate", &autoRotate);
+        if (autoRotate)
+        {
+            m_PreviewRotation += 0.5f;
+            if (m_PreviewRotation >= 360.0f)
+                m_PreviewRotation -= 360.0f;
+        }
+        
+        // 3D Preview viewport
+        ImGui::BeginChild("PreviewViewport", ImVec2(0, 400), true, ImGuiWindowFlags_NoScrollbar);
         
         ImVec2 viewportSize = ImGui::GetContentRegionAvail();
-        ImGui::Text("3D Preview");
-        ImGui::Text("Size: %.0f x %.0f", viewportSize.x, viewportSize.y);
-        ImGui::Text("Rotation: %.1f degrees", m_PreviewRotation);
         
-        // TODO: Render material preview to texture and display here
-        ImGui::TextColored(ImVec4(0.7f, 0.7f, 0.0f, 1.0f), 
-            "Live preview rendering not yet implemented");
+        // Resize viewport if needed
+        if (viewportSize.x > 0 && viewportSize.y > 0)
+        {
+            uint32_t width = (uint32_t)viewportSize.x;
+            uint32_t height = (uint32_t)viewportSize.y;
+            
+            if (m_PreviewViewport->GetWidth() != width || m_PreviewViewport->GetHeight() != height)
+            {
+                m_PreviewViewport->Resize(width, height);
+            }
+            
+            // Render the preview
+            float rotationRadians = glm::radians(m_PreviewRotation);
+            if (m_PreviewShape == PreviewShape::Sphere)
+            {
+                m_PreviewViewport->RenderPreviewSphere(m_CurrentMaterial, rotationRadians);
+            }
+            else
+            {
+                m_PreviewViewport->RenderPreviewCube(m_CurrentMaterial, rotationRadians);
+            }
+            
+            // Display the rendered texture
+            ImGui::Image((ImTextureID)(uintptr_t)m_PreviewViewport->GetColorAttachment(),
+                        viewportSize, ImVec2(0, 1), ImVec2(1, 0)); // Flip Y for OpenGL
+        }
+        else
+        {
+            ImGui::Text("Resize window to show preview");
+        }
         
         ImGui::EndChild();
         
         if (ImGui::Button("Reset Camera"))
         {
             m_PreviewRotation = 0.0f;
+            autoRotate = false;
         }
     }
 
