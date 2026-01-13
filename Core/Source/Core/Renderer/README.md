@@ -352,7 +352,7 @@ ComputeShader::MemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 ```
 
 ### 1.12 Advanced Textures
-**Location**: `AdvancedTexture.h/cpp`
+**Location**: `Texture.h/cpp`
 
 Advanced texture support including cubemaps and 3D textures.
 
@@ -404,7 +404,7 @@ indirectBuffer.Draw(commands.size());
 
 ```
 Core/Source/Core/Renderer/
-├── AdvancedTexture.h/cpp      - Advanced texture support
+├── Texture.h/cpp               - Advanced texture support
 ├── BatchRenderer.h/cpp         - 2D batch rendering
 ├── Buffer.h/cpp                - Vertex/Index buffers
 ├── Camera.h/cpp                - Camera system

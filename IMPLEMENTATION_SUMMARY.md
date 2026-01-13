@@ -79,7 +79,7 @@ The following systems were already present and working in the codebase:
   - Bounding sphere culling
   - Result readback
 
-#### 7. Advanced Textures (`AdvancedTexture.h/cpp`)
+#### 7. Advanced Textures (`Texture.h/cpp`)
 - Unified Texture class supporting:
   - 2D textures
   - 3D textures
@@ -111,7 +111,7 @@ The following systems were already present and working in the codebase:
 - `ShaderManager.h/cpp` (296 lines)
 - `RenderPass.h/cpp` (491 lines)
 - `PostProcessing.h/cpp` (363 lines)
-- `AdvancedTexture.h/cpp` (537 lines)
+- `Texture.h/cpp` (537 lines)
 - `ComputeUtils.h/cpp` (525 lines)
 - `README.md` (433 lines)
 
@@ -119,7 +119,7 @@ The following systems were already present and working in the codebase:
 - `Shader.h/cpp` (namespace fix)
 - `Renderer.h/cpp` (namespace fix)
 - `GLUtils.h/cpp` (namespace fix)
-- `AdvancedTexture.cpp` (include fix)
+- `Texture.cpp` (include fix)
 
 ### Total Lines Added
 - **~3,400+ lines of new code and documentation**

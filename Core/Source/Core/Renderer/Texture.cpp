@@ -1,4 +1,4 @@
-#include "AdvancedTexture.h"
+#include "Texture.h"
 #include <iostream>
 
 // Include stb_image for loading
