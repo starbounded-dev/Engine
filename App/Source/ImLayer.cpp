@@ -26,6 +26,8 @@ namespace Core
 		// Initialize editor panels
 		m_ProfilerPanel = std::make_unique<Editor::ProfilerPanel>();
 		m_ShaderEditor = std::make_unique<Editor::ShaderEditor>();
+		m_StatsPanel = std::make_unique<Editor::StatsPanel>();
+		m_MaterialEditor = std::make_unique<Editor::MaterialEditor>();
 		
 		// Register shader editor instance for global access
 		Editor::ShaderEditor::SetInstance(m_ShaderEditor.get());
@@ -44,6 +46,8 @@ namespace Core
 		// Cleanup panels
 		m_ProfilerPanel.reset();
 		m_ShaderEditor.reset();
+		m_StatsPanel.reset();
+		m_MaterialEditor.reset();
 	}
 
 	void ImLayer::OnEvent(Event& e)
@@ -130,6 +134,8 @@ namespace Core
 				ImGui::Separator();
 				ImGui::MenuItem("Profiler", "F3", &m_ShowProfiler);
 				ImGui::MenuItem("Shader Editor", "F4", &m_ShowShaderEditor);
+				ImGui::MenuItem("Renderer Stats", "F5", &m_ShowStatsPanel);
+				ImGui::MenuItem("Material Editor", "F6", &m_ShowMaterialEditor);
 				ImGui::Separator();
 				ImGui::MenuItem("Overlay", "F2", &m_ShowOverlay);
 				ImGui::MenuItem("ImGui Demo", "F1", &m_ShowDemoWindow);
@@ -140,6 +146,8 @@ namespace Core
 			{
 				if (ImGui::MenuItem("Profiler", "F3", &m_ShowProfiler)) {}
 				if (ImGui::MenuItem("Shader Editor", "F4", &m_ShowShaderEditor)) {}
+				if (ImGui::MenuItem("Renderer Stats", "F5", &m_ShowStatsPanel)) {}
+				if (ImGui::MenuItem("Material Editor", "F6", &m_ShowMaterialEditor)) {}
 					ImGui::Separator();
 				if (ImGui::MenuItem("Reset Layout"))
 				{
@@ -230,6 +238,20 @@ namespace Core
 			m_ShaderEditor->SetEnabled(m_ShowShaderEditor);
 			m_ShaderEditor->OnImGuiRender();
 		}
+		
+		// Stats Panel (Renderer Statistics)
+		if (m_ShowStatsPanel && m_StatsPanel)
+		{
+			m_StatsPanel->SetEnabled(m_ShowStatsPanel);
+			m_StatsPanel->OnImGuiRender();
+		}
+		
+		// Material Editor Panel
+		if (m_ShowMaterialEditor && m_MaterialEditor)
+		{
+			m_MaterialEditor->SetEnabled(m_ShowMaterialEditor);
+			m_MaterialEditor->OnImGuiRender();
+		}
 
 		// ImGui Demo Window
 		if (m_ShowDemoWindow)
@@ -261,6 +283,31 @@ namespace Core
 		metrics.Vertices = 0;
 
 		m_ProfilerPanel->UpdateMetrics(metrics);
+		
+		// Update renderer stats panel
+		if (m_StatsPanel)
+		{
+			Editor::RendererStats stats;
+			stats.FrameTime = m_LastFrameTime;
+			stats.FPS = io.Framerate;
+			
+			// TODO: Get actual renderer statistics
+			stats.DrawCalls = 0;
+			stats.TriangleCount = 0;
+			stats.VertexCount = 0;
+			stats.IndexCount = 0;
+			stats.TextureMemoryUsed = 0;
+			stats.TextureMemoryAllocated = 0;
+			stats.TextureCount = 0;
+			stats.BufferMemoryUsed = 0;
+			stats.VertexBufferCount = 0;
+			stats.IndexBufferCount = 0;
+			stats.UniformBufferCount = 0;
+			stats.RenderPasses = 0;
+			stats.ShaderSwitches = 0;
+			
+			m_StatsPanel->UpdateStats(stats);
+		}
 	}
 
 	bool ImLayer::OnKeyPressed(KeyPressedEvent& e)
@@ -281,9 +328,17 @@ namespace Core
 			case GLFW_KEY_F3:
 				m_ShowProfiler = !m_ShowProfiler;
 			return true;
-							
+						
 			case GLFW_KEY_F4:
 				m_ShowShaderEditor = !m_ShowShaderEditor;
+			return true;
+			
+			case GLFW_KEY_F5:
+				m_ShowStatsPanel = !m_ShowStatsPanel;
+			return true;
+			
+			case GLFW_KEY_F6:
+				m_ShowMaterialEditor = !m_ShowMaterialEditor;
 			return true;
 		}
 
@@ -325,6 +380,7 @@ namespace Core
 			ImGui::Separator();
 			ImGui::TextDisabled("F1: Demo | F2: Overlay");
 			ImGui::TextDisabled("F3: Profiler | F4: Shader");
+			ImGui::TextDisabled("F5: Stats | F6: Material");
 		}
 		ImGui::End();
 	}
