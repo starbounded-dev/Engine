@@ -107,9 +107,10 @@ namespace Core::Renderer
                             includeDepth ? GL_DEPTH_COMPONENT24 : GL_STENCIL_INDEX8;
             GLenum attachment = includeDepth && includeStencil ? GL_DEPTH_STENCIL_ATTACHMENT :
                                 includeDepth ? GL_DEPTH_ATTACHMENT : GL_STENCIL_ATTACHMENT;
+            GLenum dataFormat = includeDepth ? GL_DEPTH_COMPONENT : GL_STENCIL_INDEX;
+            GLenum dataType = includeDepth ? GL_FLOAT : GL_UNSIGNED_INT;
 
-            glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0,
-                includeDepth ? GL_DEPTH_COMPONENT : GL_STENCIL_INDEX, GL_FLOAT, nullptr);
+            glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, dataFormat, dataType, nullptr);
 
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);

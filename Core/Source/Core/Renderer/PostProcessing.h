@@ -7,7 +7,6 @@
 namespace Core::Renderer
 {
     class RenderTarget;
-    class Material;
 
     // Base post-processing effect
     class PostProcessEffect

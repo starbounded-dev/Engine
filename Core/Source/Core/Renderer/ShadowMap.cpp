@@ -163,39 +163,45 @@ namespace Core::Renderer
         m_MaxShadowMaps = maxShadowMaps;
         m_Resolution = resolution;
         m_ShadowMaps.clear();
-        m_ShadowMaps.reserve(maxShadowMaps);
+        m_ShadowMaps.resize(maxShadowMaps);
+        m_UsedSlots.clear();
+        m_UsedSlots.resize(maxShadowMaps, false);
     }
 
     void ShadowMapManager::Shutdown()
     {
         m_ShadowMaps.clear();
+        m_UsedSlots.clear();
     }
 
-    uint32_t ShadowMapManager::AllocateShadowMap(bool isCubemap)
+    int32_t ShadowMapManager::AllocateShadowMap(bool isCubemap)
     {
-        if (m_ShadowMaps.size() >= m_MaxShadowMaps)
+        // Find first free slot
+        for (size_t i = 0; i < m_UsedSlots.size(); ++i)
         {
-            return static_cast<uint32_t>(-1); // Max capacity reached
+            if (!m_UsedSlots[i])
+            {
+                m_ShadowMaps[i].Create(m_Resolution, m_Resolution, isCubemap);
+                m_UsedSlots[i] = true;
+                return static_cast<int32_t>(i);
+            }
         }
 
-        ShadowMap shadowMap;
-        shadowMap.Create(m_Resolution, m_Resolution, isCubemap);
-        
-        m_ShadowMaps.push_back(std::move(shadowMap));
-        return static_cast<uint32_t>(m_ShadowMaps.size() - 1);
+        return -1; // No free slots
     }
 
     void ShadowMapManager::FreeShadowMap(uint32_t index)
     {
-        if (index < m_ShadowMaps.size())
+        if (index < m_UsedSlots.size() && m_UsedSlots[index])
         {
-            m_ShadowMaps.erase(m_ShadowMaps.begin() + index);
+            m_ShadowMaps[index].Destroy();
+            m_UsedSlots[index] = false;
         }
     }
 
     ShadowMap* ShadowMapManager::GetShadowMap(uint32_t index)
     {
-        if (index < m_ShadowMaps.size())
+        if (index < m_ShadowMaps.size() && m_UsedSlots[index])
         {
             return &m_ShadowMaps[index];
         }
@@ -204,10 +210,20 @@ namespace Core::Renderer
 
     const ShadowMap* ShadowMapManager::GetShadowMap(uint32_t index) const
     {
-        if (index < m_ShadowMaps.size())
+        if (index < m_ShadowMaps.size() && m_UsedSlots[index])
         {
             return &m_ShadowMaps[index];
         }
         return nullptr;
+    }
+
+    uint32_t ShadowMapManager::GetShadowMapCount() const
+    {
+        uint32_t count = 0;
+        for (bool used : m_UsedSlots)
+        {
+            if (used) ++count;
+        }
+        return count;
     }
 }

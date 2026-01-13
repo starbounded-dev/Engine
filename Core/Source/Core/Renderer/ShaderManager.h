@@ -5,6 +5,7 @@
 #include <memory>
 #include <functional>
 #include <vector>
+#include <cstdint>
 
 namespace Core::Renderer
 {

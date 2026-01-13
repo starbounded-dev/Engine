@@ -2,9 +2,7 @@
 #include <iostream>
 
 // Include stb_image for loading
-#ifndef STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
-#endif
 
 namespace Core::Renderer
 {
