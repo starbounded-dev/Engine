@@ -2,7 +2,7 @@
 
 #include <glad/glad.h>
 
-namespace Renderer::Utils {
+namespace Core::Renderer::Utils {
 
 	const char* GLDebugSourceToString(GLenum source);
 	const char* GLDebugTypeToString(GLenum type);

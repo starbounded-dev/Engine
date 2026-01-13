@@ -10,7 +10,7 @@
 #include "stb_image.h"
 
 
-namespace Renderer {
+namespace Core::Renderer {
 
 	Texture CreateTexture(int width, int height)
 	{
@@ -119,7 +119,7 @@ namespace Renderer {
 			GL_COLOR_BUFFER_BIT, GL_NEAREST);
 	}
 
-	void Renderer::BeginFrame(int w, int h)
+	void BeginFrame(int w, int h)
 	{
 		PROFILE_FUNC();
 

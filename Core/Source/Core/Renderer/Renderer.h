@@ -5,7 +5,7 @@
 
 #include <filesystem>
 
-namespace Renderer {
+namespace Core::Renderer {
 
 	struct Texture
 	{
