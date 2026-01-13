@@ -10,6 +10,9 @@
 // ImGui (you already have it if you have ImGuiLayer)
 #include <imgui.h>
 
+// Forward declare ShaderEditor to avoid circular dependency
+namespace Editor { class ShaderEditor; }
+
 namespace Core::Renderer
 {
     static std::string ReadTextFile(const std::string& path)
@@ -80,6 +83,9 @@ namespace Core::Renderer
         m_Res->VertexPath = vertexPath;
         m_Res->FragmentPath = fragmentPath;
         Rebuild();
+        
+        // Automatically load this material's shaders into the shader editor (if available)
+        LoadIntoShaderEditor();
     }
 
     Material::~Material()
@@ -145,7 +151,7 @@ namespace Core::Renderer
             m_MaterialUBO = UniformBuffer(m_Res->MaterialLayout, UBOBinding::PerMaterial, true);
 
             // Seed default values map from reflection (zero init)
-            // (We don’t know “nice defaults” automatically, but editor needs keys.)
+            // (We donï¿½t know ï¿½nice defaultsï¿½ automatically, but editor needs keys.)
             // Also: some drivers return "MaterialData.x" -> keep that key too.
             // We'll normalize in ResolveMaterialUBOName().
             // Grab keys:
@@ -338,7 +344,7 @@ namespace Core::Renderer
     }
 
     // NOTE: If you don't have enable_shared_from_this on Material, use this safer version:
-    // (I’ll keep it simple below by implementing instance ctor from raw program path.)
+    // (Iï¿½ll keep it simple below by implementing instance ctor from raw program path.)
     // You can change CreateInstance() to:
     // return std::make_shared<MaterialInstance>(std::make_shared<Material>(*this));  // deep copy (not ideal)
     // Better: make Material inherit enable_shared_from_this<Material>.
@@ -352,6 +358,14 @@ namespace Core::Renderer
         ImGui::Text("Shader:");
         ImGui::BulletText("VS: %s", m_Res->VertexPath.c_str());
         ImGui::BulletText("FS: %s", m_Res->FragmentPath.c_str());
+        
+        // Button to load shaders into shader editor
+        if (ImGui::Button("Edit Shaders"))
+        {
+            LoadIntoShaderEditor();
+        }
+        ImGui::SameLine();
+        ImGui::TextDisabled("(F4 to open Shader Editor)");
 
         if (ImGui::TreeNode("Parameters"))
         {
@@ -636,6 +650,34 @@ namespace Core::Renderer
                     }, val);
             }
             ImGui::TreePop();
+        }
+    }
+    
+    const std::string& Material::GetVertexPath() const
+    {
+        static const std::string empty;
+        return m_Res ? m_Res->VertexPath : empty;
+    }
+    
+    const std::string& Material::GetFragmentPath() const
+    {
+        static const std::string empty;
+        return m_Res ? m_Res->FragmentPath : empty;
+    }
+    
+    void Material::LoadIntoShaderEditor() const
+    {
+        if (!m_Res || m_Res->VertexPath.empty() || m_Res->FragmentPath.empty())
+            return;
+        
+        // Use the global ShaderEditor instance if available
+        // This requires the ShaderEditor header, but we use external linkage to avoid circular deps
+        extern Editor::ShaderEditor* GetShaderEditorInstance();
+        auto* editor = GetShaderEditorInstance();
+        
+        if (editor)
+        {
+            editor->LoadShaderFiles(m_Res->VertexPath, m_Res->FragmentPath);
         }
     }
 }

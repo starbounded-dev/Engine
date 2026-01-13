@@ -6,6 +6,9 @@
 
 namespace Editor
 {
+    // Static instance
+    ShaderEditor* ShaderEditor::s_Instance = nullptr;
+    
     ShaderEditor::ShaderEditor()
     {
         // Initialize buffers
@@ -16,7 +19,26 @@ namespace Editor
         auto& shaderMgr = Core::Renderer::ShaderManager::Get();
         m_AvailableShaders = shaderMgr.GetShaderNames();
     }
+    
+    void ShaderEditor::SetInstance(ShaderEditor* instance)
+    {
+        s_Instance = instance;
+    }
+    
+    ShaderEditor* ShaderEditor::GetInstance()
+    {
+        return s_Instance;
+    }
+}
 
+// External linkage function for Material to access ShaderEditor without circular dependency
+extern "C++" Editor::ShaderEditor* GetShaderEditorInstance()
+{
+    return Editor::ShaderEditor::GetInstance();
+}
+
+namespace Editor
+{
     void ShaderEditor::OnImGuiRender()
     {
         PROFILE_FUNC();

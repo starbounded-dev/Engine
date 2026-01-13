@@ -26,6 +26,9 @@ namespace Core
 		// Initialize editor panels
 		m_ProfilerPanel = std::make_unique<Editor::ProfilerPanel>();
 		m_ShaderEditor = std::make_unique<Editor::ShaderEditor>();
+		
+		// Register shader editor instance for global access
+		Editor::ShaderEditor::SetInstance(m_ShaderEditor.get());
 
 		// Apply custom styling
 		ApplyCustomStyle();
@@ -34,6 +37,9 @@ namespace Core
 	void ImLayer::OnDetach()
 	{
 		PROFILE_FUNC();
+		
+		// Unregister shader editor instance
+		Editor::ShaderEditor::SetInstance(nullptr);
 
 		// Cleanup panels
 		m_ProfilerPanel.reset();

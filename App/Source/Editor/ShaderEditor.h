@@ -25,6 +25,10 @@ namespace Editor
         // Enable/disable panel
         void SetEnabled(bool enabled) { m_Enabled = enabled; }
         bool IsEnabled() const { return m_Enabled; }
+        
+        // Global instance access (set by ImLayer)
+        static void SetInstance(ShaderEditor* instance);
+        static ShaderEditor* GetInstance();
 
     private:
         void RenderMenuBar();
@@ -82,5 +86,8 @@ namespace Editor
         bool m_ShowErrorDisplay = true;
         bool m_ShowPreview = false;
         float m_ShaderListWidth = 200.0f;
+        
+        // Static instance for global access
+        static ShaderEditor* s_Instance;
     };
 }
