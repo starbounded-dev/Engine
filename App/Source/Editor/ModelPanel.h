@@ -1,7 +1,7 @@
 #pragma once
 #include "Core/Renderer/Model.h"
 #include "Core/Renderer/Material.h"
-#include "Core/Renderer/Viewport.h"
+#include "Core/Editor/Viewport.h"
 #include <imgui.h>
 #include <memory>
 #include <vector>
@@ -49,7 +49,7 @@ namespace Editor
         std::string m_CurrentModelPath;
         
         // Preview viewport
-        std::unique_ptr<Core::Renderer::Viewport> m_Viewport;
+        std::unique_ptr<Core::Editor::Viewport> m_Viewport;
         std::shared_ptr<Core::Renderer::Material> m_PreviewMaterial;
         
         // Preview controls

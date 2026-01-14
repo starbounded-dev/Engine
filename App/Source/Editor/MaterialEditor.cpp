@@ -8,7 +8,7 @@ namespace Editor
     MaterialEditor::MaterialEditor()
     {
         // Create preview viewport
-        m_PreviewViewport = std::make_unique<Core::Renderer::Viewport>(512, 512);
+        m_PreviewViewport = std::make_unique<Core::Editor::Viewport>(512, 512);
         
         // Add some default templates
         MaterialTemplate unlitTemplate;
