@@ -101,5 +101,14 @@ namespace Editor
         std::shared_ptr<Core::Renderer::Framebuffer> m_PreviewFramebuffer;
         std::shared_ptr<Core::Renderer::UniformBuffer> m_PerObjectUBO; // Model, View, Projection matrices
         enum class PreviewShape { Sphere, Cube } m_PreviewShape = PreviewShape::Sphere;
+        
+        // Preview meshes
+        std::unique_ptr<Core::Renderer::Mesh> m_SphereMesh;
+        std::unique_ptr<Core::Renderer::Mesh> m_CubeMesh;
+        
+        // Create preview geometries
+        void CreatePreviewMeshes();
+        static std::unique_ptr<Core::Renderer::Mesh> CreateSphereMesh();
+        static std::unique_ptr<Core::Renderer::Mesh> CreateCubeMesh();
     };
 }

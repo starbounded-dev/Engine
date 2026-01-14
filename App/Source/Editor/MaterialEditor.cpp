@@ -60,6 +60,175 @@ namespace Editor
         standardTemplate.DefaultValues["u_Shininess"] = 32.0f;
         standardTemplate.TextureSlots = { "u_DiffuseMap", "u_SpecularMap", "u_NormalMap" };
         m_Templates.push_back(standardTemplate);
+        
+        // Create preview meshes
+        CreatePreviewMeshes();
+    }
+    
+    void MaterialEditor::CreatePreviewMeshes()
+    {
+        m_SphereMesh = CreateSphereMesh();
+        m_CubeMesh = CreateCubeMesh();
+    }
+    
+    std::unique_ptr<Core::Renderer::Mesh> MaterialEditor::CreateSphereMesh()
+    {
+        std::vector<Core::Renderer::MeshVertex> vertices;
+        std::vector<uint32_t> indices;
+        
+        // Generate UV sphere with 32 segments and 16 rings
+        const int segments = 32;
+        const int rings = 16;
+        const float radius = 1.0f;
+        
+        // Generate vertices
+        for (int ring = 0; ring <= rings; ++ring)
+        {
+            float phi = glm::pi<float>() * float(ring) / float(rings);
+            for (int seg = 0; seg <= segments; ++seg)
+            {
+                float theta = 2.0f * glm::pi<float>() * float(seg) / float(segments);
+                
+                Core::Renderer::MeshVertex vertex;
+                vertex.Position.x = radius * sin(phi) * cos(theta);
+                vertex.Position.y = radius * cos(phi);
+                vertex.Position.z = radius * sin(phi) * sin(theta);
+                vertex.Normal = glm::normalize(vertex.Position);
+                vertex.TexCoord.x = float(seg) / float(segments);
+                vertex.TexCoord.y = float(ring) / float(rings);
+                
+                vertices.push_back(vertex);
+            }
+        }
+        
+        // Generate indices
+        for (int ring = 0; ring < rings; ++ring)
+        {
+            for (int seg = 0; seg < segments; ++seg)
+            {
+                int current = ring * (segments + 1) + seg;
+                int next = current + segments + 1;
+                
+                indices.push_back(current);
+                indices.push_back(next);
+                indices.push_back(current + 1);
+                
+                indices.push_back(current + 1);
+                indices.push_back(next);
+                indices.push_back(next + 1);
+            }
+        }
+        
+        return std::make_unique<Core::Renderer::Mesh>(vertices, indices, 0);
+    }
+    
+    std::unique_ptr<Core::Renderer::Mesh> MaterialEditor::CreateCubeMesh()
+    {
+        std::vector<Core::Renderer::MeshVertex> vertices;
+        std::vector<uint32_t> indices;
+        
+        // Cube vertices with normals and UVs
+        const float size = 1.0f;
+        
+        // Front face
+        vertices.push_back({{-size, -size,  size}, { 0, 0, 1}, {0, 0}});
+        vertices.push_back({{ size, -size,  size}, { 0, 0, 1}, {1, 0}});
+        vertices.push_back({{ size,  size,  size}, { 0, 0, 1}, {1, 1}});
+        vertices.push_back({{-size,  size,  size}, { 0, 0, 1}, {0, 1}});
+        
+        // Back face
+        vertices.push_back({{ size, -size, -size}, { 0, 0,-1}, {0, 0}});
+        vertices.push_back({{-size, -size, -size}, { 0, 0,-1}, {1, 0}});
+        vertices.push_back({{-size,  size, -size}, { 0, 0,-1}, {1, 1}});
+        vertices.push_back({{ size,  size, -size}, { 0, 0,-1}, {0, 1}});
+        
+        // Left face
+        vertices.push_back({{-size, -size, -size}, {-1, 0, 0}, {0, 0}});
+        vertices.push_back({{-size, -size,  size}, {-1, 0, 0}, {1, 0}});
+        vertices.push_back({{-size,  size,  size}, {-1, 0, 0}, {1, 1}});
+        vertices.push_back({{-size,  size, -size}, {-1, 0, 0}, {0, 1}});
+        
+        // Right face
+        vertices.push_back({{ size, -size,  size}, { 1, 0, 0}, {0, 0}});
+        vertices.push_back({{ size, -size, -size}, { 1, 0, 0}, {1, 0}});
+        vertices.push_back({{ size,  size, -size}, { 1, 0, 0}, {1, 1}});
+        vertices.push_back({{ size,  size,  size}, { 1, 0, 0}, {0, 1}});
+        
+        // Top face
+        vertices.push_back({{-size,  size,  size}, { 0, 1, 0}, {0, 0}});
+        vertices.push_back({{ size,  size,  size}, { 0, 1, 0}, {1, 0}});
+        vertices.push_back({{ size,  size, -size}, { 0, 1, 0}, {1, 1}});
+        vertices.push_back({{-size,  size, -size}, { 0, 1, 0}, {0, 1}});
+        
+        // Bottom face
+        vertices.push_back({{-size, -size, -size}, { 0,-1, 0}, {0, 0}});
+        vertices.push_back({{ size, -size, -size}, { 0,-1, 0}, {1, 0}});
+        vertices.push_back({{ size, -size,  size}, { 0,-1, 0}, {1, 1}});
+        vertices.push_back({{-size, -size,  size}, { 0,-1, 0}, {0, 1}});
+        
+        // Indices (6 faces × 2 triangles × 3 vertices)
+        for (uint32_t i = 0; i < 6; ++i)
+        {
+            uint32_t base = i * 4;
+            indices.push_back(base + 0);
+            indices.push_back(base + 1);
+            indices.push_back(base + 2);
+            indices.push_back(base + 0);
+            indices.push_back(base + 2);
+            indices.push_back(base + 3);
+        }
+        
+        return std::make_unique<Core::Renderer::Mesh>(vertices, indices, 0);
+    }
+
+    void MaterialEditor::OnImGuiRender()
+    {
+        if (!m_Enabled)
+            return;
+
+        ImGui::Begin("Material Editor", &m_Enabled);
+
+        // Tabs for different sections
+        if (ImGui::BeginTabBar("MaterialEditorTabs"))
+        {
+            if (ImGui::BeginTabItem("Properties"))
+            {
+                RenderPropertyEditor();
+                ImGui::EndTabItem();
+            }
+
+            if (ImGui::BeginTabItem("Textures"))
+            {
+                RenderTextureSlots();
+                ImGui::EndTabItem();
+            }
+
+            if (ImGui::BeginTabItem("Preview"))
+            {
+                RenderLivePreview();
+                ImGui::EndTabItem();
+            }
+
+            if (ImGui::BeginTabItem("Actions"))
+            {
+                RenderActions();
+                ImGui::EndTabItem();
+            }
+
+            if (ImGui::BeginTabItem("Templates"))
+            {
+                RenderTemplateSelector();
+                ImGui::EndTabItem();
+            }
+
+            ImGui::EndTabBar();
+        }
+
+        ImGui::End();
+    }
+
+        standardTemplate.TextureSlots = { "u_DiffuseMap", "u_SpecularMap", "u_NormalMap" };
+        m_Templates.push_back(standardTemplate);
     }
 
     void MaterialEditor::OnImGuiRender()
@@ -415,9 +584,15 @@ namespace Editor
             // Bind material (shaders expect matrices from UBO)
             m_CurrentMaterial->Bind();
             
-            // TODO: Draw preview geometry (sphere or cube)
-            // This requires access to preview meshes, which should be part of the Viewport
-            // or renderer infrastructure. For now, this is a placeholder.
+            // Draw preview geometry (sphere or cube)
+            if (m_PreviewShape == PreviewShape::Sphere && m_SphereMesh)
+            {
+                m_SphereMesh->Draw();
+            }
+            else if (m_PreviewShape == PreviewShape::Cube && m_CubeMesh)
+            {
+                m_CubeMesh->Draw();
+            }
             
             glUseProgram(0);
             Core::Renderer::Framebuffer::Unbind();

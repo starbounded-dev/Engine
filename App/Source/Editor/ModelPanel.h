@@ -42,6 +42,11 @@ namespace Editor
         
         // Helper to load model from file dialog
         void OpenFileDialog();
+        
+        // Create preview geometries
+        void CreatePreviewMeshes();
+        static std::unique_ptr<Core::Renderer::Mesh> CreateSphereMesh();
+        static std::unique_ptr<Core::Renderer::Mesh> CreateCubeMesh();
 
     private:
         bool m_Enabled = true;
@@ -80,5 +85,9 @@ namespace Editor
         // Recent models
         std::vector<std::string> m_RecentModels;
         static constexpr int MaxRecentModels = 10;
+        
+        // Preview meshes
+        std::unique_ptr<Core::Renderer::Mesh> m_SphereMesh;
+        std::unique_ptr<Core::Renderer::Mesh> m_CubeMesh;
     };
 }
