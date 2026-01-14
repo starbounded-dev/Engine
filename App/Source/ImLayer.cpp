@@ -28,6 +28,7 @@ namespace Core
 		m_ShaderEditor = std::make_unique<Editor::ShaderEditor>();
 		m_StatsPanel = std::make_unique<Editor::StatsPanel>();
 		m_MaterialEditor = std::make_unique<Editor::MaterialEditor>();
+		m_ModelPanel = std::make_unique<Editor::ModelPanel>();
 		
 		// Register shader editor instance for global access
 		Editor::ShaderEditor::SetInstance(m_ShaderEditor.get());
@@ -48,6 +49,7 @@ namespace Core
 		m_ShaderEditor.reset();
 		m_StatsPanel.reset();
 		m_MaterialEditor.reset();
+		m_ModelPanel.reset();
 	}
 
 	void ImLayer::OnEvent(Event& e)
@@ -136,6 +138,7 @@ namespace Core
 				ImGui::MenuItem("Shader Editor", "F4", &m_ShowShaderEditor);
 				ImGui::MenuItem("Renderer Stats", "F5", &m_ShowStatsPanel);
 				ImGui::MenuItem("Material Editor", "F6", &m_ShowMaterialEditor);
+				ImGui::MenuItem("Model Viewer", "F7", &m_ShowModelPanel);
 				ImGui::Separator();
 				ImGui::MenuItem("Overlay", "F2", &m_ShowOverlay);
 				ImGui::MenuItem("ImGui Demo", "F1", &m_ShowDemoWindow);
@@ -148,6 +151,7 @@ namespace Core
 				if (ImGui::MenuItem("Shader Editor", "F4", &m_ShowShaderEditor)) {}
 				if (ImGui::MenuItem("Renderer Stats", "F5", &m_ShowStatsPanel)) {}
 				if (ImGui::MenuItem("Material Editor", "F6", &m_ShowMaterialEditor)) {}
+				if (ImGui::MenuItem("Model Viewer", "F7", &m_ShowModelPanel)) {}
 					ImGui::Separator();
 				if (ImGui::MenuItem("Reset Layout"))
 				{
@@ -252,6 +256,13 @@ namespace Core
 			m_MaterialEditor->SetEnabled(m_ShowMaterialEditor);
 			m_MaterialEditor->OnImGuiRender();
 		}
+		
+		// Model Viewer Panel
+		if (m_ShowModelPanel && m_ModelPanel)
+		{
+			m_ModelPanel->SetEnabled(m_ShowModelPanel);
+			m_ModelPanel->OnImGuiRender();
+		}
 
 		// ImGui Demo Window
 		if (m_ShowDemoWindow)
@@ -340,6 +351,10 @@ namespace Core
 			case GLFW_KEY_F6:
 				m_ShowMaterialEditor = !m_ShowMaterialEditor;
 			return true;
+			
+			case GLFW_KEY_F7:
+				m_ShowModelPanel = !m_ShowModelPanel;
+			return true;
 		}
 
 		return false;
@@ -381,6 +396,7 @@ namespace Core
 			ImGui::TextDisabled("F1: Demo | F2: Overlay");
 			ImGui::TextDisabled("F3: Profiler | F4: Shader");
 			ImGui::TextDisabled("F5: Stats | F6: Material");
+			ImGui::TextDisabled("F7: Model Viewer");
 		}
 		ImGui::End();
 	}
