@@ -1,5 +1,6 @@
 #include "ShaderEditor.h"
 #include "Core/Debug/Profiler.h"
+#include "Core/Utilities/FileSystem.h"
 #include <fstream>
 #include <sstream>
 #include <iostream>
@@ -158,6 +159,11 @@ namespace Editor
         {
             if (ImGui::BeginMenu("File"))
             {
+                if (ImGui::MenuItem("Open Shader Files..."))
+                    OpenShaderFilesDialog();
+                
+                ImGui::Separator();
+                
                 if (ImGui::MenuItem("Save", "Ctrl+S"))
                     SaveCurrentShader();
                 
@@ -454,6 +460,28 @@ namespace Editor
         {
             m_LastSuccessfulCompile = "Shader compiled and tested successfully";
         }
+    }
+    
+    void ShaderEditor::OpenShaderFilesDialog()
+    {
+        // Open vertex shader file dialog
+        auto vertexPath = Core::Utilities::FileSystem::OpenFileDialog(
+            Core::Utilities::FileSystem::FILTER_SHADERS
+        );
+        
+        if (!vertexPath.has_value())
+            return;
+        
+        // Open fragment shader file dialog
+        auto fragmentPath = Core::Utilities::FileSystem::OpenFileDialog(
+            Core::Utilities::FileSystem::FILTER_SHADERS
+        );
+        
+        if (!fragmentPath.has_value())
+            return;
+        
+        // Load the shader files
+        LoadShaderFiles(vertexPath.value(), fragmentPath.value());
     }
 
     bool ShaderEditor::LoadFileContent(const std::filesystem::path& path, std::string& content)

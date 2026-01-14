@@ -1,5 +1,6 @@
 #include "ModelPanel.h"
 #include "Core/Renderer/Camera.h"
+#include "Core/Utilities/FileSystem.h"
 #include <imgui.h>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
@@ -454,18 +455,15 @@ namespace Editor
 
     void ModelPanel::OpenFileDialog()
     {
-        // This is a placeholder. In a real implementation, you would use
-        // a platform-specific file dialog or a library like ImGuiFileDialog
-        // For now, users can use the recent models list or manually enter paths
+        // Use FileSystem utility to open native file dialog
+        auto modelPath = Core::Utilities::FileSystem::OpenFileDialog(
+            Core::Utilities::FileSystem::FILTER_MODELS
+        );
         
-        ImGui::OpenPopup("Load Model Path");
-        
-        static char pathBuffer[512] = "";
-        
-        if (ImGui::BeginPopupModal("Load Model Path", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+        if (modelPath.has_value())
         {
-            ImGui::Text("Enter model file path:");
-            ImGui::InputText("Path", pathBuffer, sizeof(pathBuffer));
+            LoadModel(modelPath.value());
+        }
             
             if (ImGui::Button("Load", ImVec2(120, 0)))
             {

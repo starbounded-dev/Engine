@@ -45,6 +45,7 @@ namespace Editor
         void SaveCurrentShader();
         void ReloadCurrentShader();
         void CompileAndTest();
+        void OpenShaderFilesDialog();
         
         // Syntax highlighting (basic)
         void ApplyBasicSyntaxHighlighting(std::string& text);

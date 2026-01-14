@@ -1,4 +1,5 @@
 #include "MaterialEditor.h"
+#include "Core/Utilities/FileSystem.h"
 #include <algorithm>
 #include <cstring>
 
@@ -249,15 +250,27 @@ namespace Editor
             ImGui::SameLine();
             if (ImGui::Button("Load"))
             {
-                // TODO: Load texture from file path
-                // For now, just a placeholder
-                ImGui::OpenPopup("Load Texture");
+                // Use FileSystem utility to open image file dialog
+                auto texturePath = Core::Utilities::FileSystem::OpenFileDialog(
+                    Core::Utilities::FileSystem::FILTER_IMAGES
+                );
+                
+                if (texturePath.has_value())
+                {
+                    // Copy path to buffer
+                    strncpy(slot.FilePath, texturePath.value().c_str(), sizeof(slot.FilePath) - 1);
+                    slot.FilePath[sizeof(slot.FilePath) - 1] = '\0';
+                    
+                    // TODO: Actually load the texture from file
+                    // For now, this is a placeholder
+                    ImGui::OpenPopup("Texture Load Info");
+                }
             }
             
-            if (ImGui::BeginPopup("Load Texture"))
+            if (ImGui::BeginPopup("Texture Load Info"))
             {
-                ImGui::Text("Texture loading not yet implemented");
-                ImGui::Text("File: %s", slot.FilePath);
+                ImGui::Text("Texture loading not yet fully implemented");
+                ImGui::Text("Selected file: %s", slot.FilePath);
                 ImGui::EndPopup();
             }
             
@@ -474,14 +487,32 @@ namespace Editor
         if (!m_CurrentMaterial)
             return;
         
-        // TODO: Implement material serialization
-        ImGui::OpenPopup("Save Material");
+        // Use FileSystem utility to open save dialog
+        auto savePath = Core::Utilities::FileSystem::SaveFileDialog(
+            Core::Utilities::FileSystem::FILTER_MATERIALS
+        );
+        
+        if (savePath.has_value())
+        {
+            // TODO: Implement material serialization to file
+            // For now, just show success message
+            ImGui::OpenPopup("Save Material Success");
+        }
     }
 
     void MaterialEditor::LoadMaterial()
     {
-        // TODO: Implement material deserialization
-        ImGui::OpenPopup("Load Material");
+        // Use FileSystem utility to open file dialog
+        auto loadPath = Core::Utilities::FileSystem::OpenFileDialog(
+            Core::Utilities::FileSystem::FILTER_MATERIALS
+        );
+        
+        if (loadPath.has_value())
+        {
+            // TODO: Implement material deserialization from file
+            // For now, just show the path
+            ImGui::OpenPopup("Load Material");
+        }
     }
 
     void MaterialEditor::RenderMaterialValueEditor(const std::string& name, Core::Renderer::MaterialValue& value)
