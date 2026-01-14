@@ -3,6 +3,14 @@
 #include <sstream>
 #include <algorithm>
 
+// Undefine Windows macros that conflict with our methods
+#ifdef _WIN32
+#undef CreateDirectory
+#undef DeleteFile
+#undef CopyFile
+#undef MoveFile
+#endif
+
 // NFD (Native File Dialog) integration - will be linked when NFD is properly set up
 // For now, we provide stub implementations that can be replaced with NFD calls
 #ifdef USE_NFD
@@ -95,8 +103,8 @@ namespace Utilities {
 	std::vector<std::string> FileSystem::OpenMultipleFilesDialog(const char* filterList)
 	{
 #ifdef USE_NFD
-		const nfdu8pathset_t* pathSet = nullptr;
 		nfdfilteritem_t filters[1] = { { "Files", filterList } };
+		const nfdu8pathset_t* pathSet = nullptr;
 		nfdresult_t result = NFD_OpenDialogMultipleU8(&pathSet, filters, 1, nullptr);
 		
 		std::vector<std::string> paths;
