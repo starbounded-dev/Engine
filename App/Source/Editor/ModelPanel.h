@@ -2,6 +2,7 @@
 #include "Core/Renderer/Model.h"
 #include "Core/Renderer/Material.h"
 #include "Core/Renderer/Framebuffer.h"
+#include "Core/Renderer/UniformBuffer.h"
 #include "Core/Editor/Viewport.h"
 #include <imgui.h>
 #include <memory>
@@ -53,6 +54,7 @@ namespace Editor
         std::unique_ptr<Core::Editor::Viewport> m_Viewport;
         std::shared_ptr<Core::Renderer::Framebuffer> m_PreviewFramebuffer;
         std::shared_ptr<Core::Renderer::Material> m_PreviewMaterial;
+        std::shared_ptr<Core::Renderer::UniformBuffer> m_PerObjectUBO; // Model, View, Projection matrices
         
         // Preview controls
         enum class PreviewShape { Sphere, Cube, LoadedModel };

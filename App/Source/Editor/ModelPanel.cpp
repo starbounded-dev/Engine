@@ -30,6 +30,14 @@ namespace Editor
             "Resources/Shaders/DebugModel.vert.glsl",
             "Resources/Shaders/DebugModel.frag.glsl"
         );
+        
+        // Create UniformBuffer for per-object matrices (Model, View, Projection)
+        // Binding point 1 = PerObject, size = 3 mat4 matrices (48 floats = 192 bytes)
+        m_PerObjectUBO = std::make_shared<Core::Renderer::UniformBuffer>(
+            3 * sizeof(glm::mat4),  // Model + View + Projection
+            Core::Renderer::UBOBinding::PerObject,  // binding = 1
+            true  // dynamic (updated every frame)
+        );
     }
 
     void ModelPanel::OnImGuiRender()
@@ -325,11 +333,17 @@ namespace Editor
                 model = glm::rotate(model, glm::radians(m_ModelRotation), glm::vec3(0.0f, 1.0f, 0.0f));
                 model = glm::scale(model, glm::vec3(m_ModelScale));
                 
-                // Set matrices in material
+                glm::mat4 view = camera.GetViewMatrix();
+                glm::mat4 projection = camera.GetProjectionMatrix();
+                
+                // Upload matrices to UniformBuffer (Model at offset 0, View at 64, Projection at 128)
+                m_PerObjectUBO->SetData(&model, sizeof(glm::mat4), 0);
+                m_PerObjectUBO->SetData(&view, sizeof(glm::mat4), sizeof(glm::mat4));
+                m_PerObjectUBO->SetData(&projection, sizeof(glm::mat4), 2 * sizeof(glm::mat4));
+                m_PerObjectUBO->BindBase();
+                
+                // Bind material (shaders expect matrices from UBO)
                 m_PreviewMaterial->Bind();
-                m_PreviewMaterial->SetMat4("u_Model", model);
-                m_PreviewMaterial->SetMat4("u_View", camera.GetViewMatrix());
-                m_PreviewMaterial->SetMat4("u_Projection", camera.GetProjectionMatrix());
                 
                 // Draw the model or preview shape
                 if (m_PreviewShape == PreviewShape::LoadedModel && m_CurrentModel)

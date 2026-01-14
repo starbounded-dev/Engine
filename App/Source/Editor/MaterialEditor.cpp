@@ -24,6 +24,13 @@ namespace Editor
         m_PreviewViewport = std::make_unique<Core::Editor::Viewport>("Material Preview");
         m_PreviewViewport->SetFramebuffer(m_PreviewFramebuffer, 0);
         
+        // Create UniformBuffer for per-object matrices (Model, View, Projection)
+        m_PerObjectUBO = std::make_shared<Core::Renderer::UniformBuffer>(
+            3 * sizeof(glm::mat4),  // Model + View + Projection
+            Core::Renderer::UBOBinding::PerObject,  // binding = 1
+            true  // dynamic (updated every frame)
+        );
+        
         // Add some default templates
         MaterialTemplate unlitTemplate;
         unlitTemplate.Name = "Unlit";
@@ -396,11 +403,17 @@ namespace Editor
             glm::mat4 model = glm::mat4(1.0f);
             model = glm::rotate(model, glm::radians(m_PreviewRotation), glm::vec3(0.0f, 1.0f, 0.0f));
             
-            // Bind material and set matrices
+            glm::mat4 view = camera.GetViewMatrix();
+            glm::mat4 projection = camera.GetProjectionMatrix();
+            
+            // Upload matrices to UniformBuffer (Model at offset 0, View at 64, Projection at 128)
+            m_PerObjectUBO->SetData(&model, sizeof(glm::mat4), 0);
+            m_PerObjectUBO->SetData(&view, sizeof(glm::mat4), sizeof(glm::mat4));
+            m_PerObjectUBO->SetData(&projection, sizeof(glm::mat4), 2 * sizeof(glm::mat4));
+            m_PerObjectUBO->BindBase();
+            
+            // Bind material (shaders expect matrices from UBO)
             m_CurrentMaterial->Bind();
-            m_CurrentMaterial->SetMat4("u_Model", model);
-            m_CurrentMaterial->SetMat4("u_View", camera.GetViewMatrix());
-            m_CurrentMaterial->SetMat4("u_Projection", camera.GetProjectionMatrix());
             
             // TODO: Draw preview geometry (sphere or cube)
             // This requires access to preview meshes, which should be part of the Viewport
