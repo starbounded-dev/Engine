@@ -24,14 +24,14 @@ namespace Core
 		PROFILE_FUNC();
 
 		// Initialize editor panels
-		m_ProfilerPanel = std::make_unique<Editor::ProfilerPanel>();
-		m_ShaderEditor = std::make_unique<Editor::ShaderEditor>();
-		m_StatsPanel = std::make_unique<Editor::StatsPanel>();
-		m_MaterialEditor = std::make_unique<Editor::MaterialEditor>();
-		m_ModelPanel = std::make_unique<Editor::ModelPanel>();
+		m_ProfilerPanel = std::make_unique<::Editor::ProfilerPanel>();
+		m_ShaderEditor = std::make_unique<::Editor::ShaderEditor>();
+		m_StatsPanel = std::make_unique<::Editor::StatsPanel>();
+		m_MaterialEditor = std::make_unique<::Editor::MaterialEditor>();
+		m_ModelPanel = std::make_unique<::Editor::ModelPanel>();
 		
 		// Register shader editor instance for global access
-		Editor::ShaderEditor::SetInstance(m_ShaderEditor.get());
+		::Editor::ShaderEditor::SetInstance(m_ShaderEditor.get());
 
 		// Apply custom styling
 		ApplyCustomStyle();
@@ -42,7 +42,7 @@ namespace Core
 		PROFILE_FUNC();
 		
 		// Unregister shader editor instance
-		Editor::ShaderEditor::SetInstance(nullptr);
+		::Editor::ShaderEditor::SetInstance(nullptr);
 
 		// Cleanup panels
 		m_ProfilerPanel.reset();
@@ -277,7 +277,7 @@ namespace Core
 		return;
 
 		// Update profiler with current metrics
-		Editor::PerformanceMetrics metrics;
+		::Editor::PerformanceMetrics metrics;
 
 		auto& io = ImGui::GetIO();
 		metrics.FrameTime = m_LastFrameTime;
@@ -298,7 +298,7 @@ namespace Core
 		// Update renderer stats panel
 		if (m_StatsPanel)
 		{
-			Editor::RendererStats stats;
+			::Editor::RendererStats stats;
 			stats.FrameTime = m_LastFrameTime;
 			stats.FPS = io.Framerate;
 			

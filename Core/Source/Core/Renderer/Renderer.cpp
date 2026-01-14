@@ -74,51 +74,6 @@ namespace Core::Renderer {
 		return result;
 	}
 
-	Framebuffer CreateFramebufferWithTexture(const Texture texture)
-	{
-		PROFILE_FUNC();
-
-		Framebuffer result;
-
-		glCreateFramebuffers(1, &result.Handle);
-
-		if (!AttachTextureToFramebuffer(result, texture))
-		{
-			glDeleteFramebuffers(1, &result.Handle);
-			return {};
-		}
-
-		return result;
-	}
-
-	bool AttachTextureToFramebuffer(Framebuffer& framebuffer, const Texture texture)
-	{
-		PROFILE_FUNC();
-
-		glNamedFramebufferTexture(framebuffer.Handle, GL_COLOR_ATTACHMENT0, texture.Handle, 0);
-
-		if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
-		{
-			std::cerr << "Framebuffer is not complete!" << std::endl;
-			return false;
-		}
-
-		framebuffer.ColorAttachment = texture;
-		return true;
-	}
-
-	void BlitFramebufferToSwapchain(const Framebuffer framebuffer)
-	{
-		PROFILE_FUNC();
-
-		glBindFramebuffer(GL_READ_FRAMEBUFFER, framebuffer.Handle);
-		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0); // swapchain
-
-		glBlitFramebuffer(0, 0, framebuffer.ColorAttachment.Width, framebuffer.ColorAttachment.Height, // Source rect
-			0, 0, framebuffer.ColorAttachment.Width, framebuffer.ColorAttachment.Height,               // Destination rect
-			GL_COLOR_BUFFER_BIT, GL_NEAREST);
-	}
-
 	void BeginFrame(int w, int h)
 	{
 		PROFILE_FUNC();

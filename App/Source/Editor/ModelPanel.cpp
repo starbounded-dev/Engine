@@ -11,15 +11,14 @@ namespace Editor
     ModelPanel::ModelPanel()
     {
         // Create preview framebuffer
-        using namespace Core::Renderer;
-        FramebufferSpec fbSpec;
+        Core::Renderer::FramebufferSpec fbSpec;
         fbSpec.Width = 512;
         fbSpec.Height = 512;
         fbSpec.Attachments = {
-            { FramebufferTextureFormat::RGBA8 },         // Color
-            { FramebufferTextureFormat::Depth24Stencil8 } // Depth/Stencil
+            {Core::Renderer::FramebufferTextureFormat::RGBA8 },         // Color
+            {Core::Renderer::FramebufferTextureFormat::Depth24Stencil8 } // Depth/Stencil
         };
-        m_PreviewFramebuffer = std::make_shared<Framebuffer>(fbSpec);
+        m_PreviewFramebuffer = std::make_shared<Core::Renderer::Framebuffer>(fbSpec);
         
         // Create viewport for live preview and set framebuffer
         m_Viewport = std::make_unique<Core::Editor::Viewport>("Model Preview");

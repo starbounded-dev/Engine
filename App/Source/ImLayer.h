@@ -47,11 +47,11 @@ namespace Core
 		bool m_ShowModelPanel = false;
 		
 		// Editor panels
-		std::unique_ptr<Editor::ProfilerPanel> m_ProfilerPanel;
-		std::unique_ptr<Editor::ShaderEditor> m_ShaderEditor;
-		std::unique_ptr<Editor::StatsPanel> m_StatsPanel;
-		std::unique_ptr<Editor::MaterialEditor> m_MaterialEditor;
-		std::unique_ptr<Editor::ModelPanel> m_ModelPanel;
+		std::unique_ptr<::Editor::ProfilerPanel> m_ProfilerPanel;
+		std::unique_ptr<::Editor::ShaderEditor> m_ShaderEditor;
+		std::unique_ptr<::Editor::StatsPanel> m_StatsPanel;
+		std::unique_ptr<::Editor::MaterialEditor> m_MaterialEditor;
+		std::unique_ptr<::Editor::ModelPanel> m_ModelPanel;
 		
 		// Stats
 		int m_Clicks = 0;
