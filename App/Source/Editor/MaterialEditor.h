@@ -4,6 +4,8 @@
 #include "Core/Renderer/Framebuffer.h"
 #include "Core/Renderer/UniformBuffer.h"
 #include "Core/Editor/Viewport.h"
+#include "Core/Renderer/Mesh.h"
+
 #include <imgui.h>
 #include <memory>
 #include <vector>

@@ -188,56 +188,6 @@ namespace Editor
 
         ImGui::Begin("Material Editor", &m_Enabled);
 
-        // Tabs for different sections
-        if (ImGui::BeginTabBar("MaterialEditorTabs"))
-        {
-            if (ImGui::BeginTabItem("Properties"))
-            {
-                RenderPropertyEditor();
-                ImGui::EndTabItem();
-            }
-
-            if (ImGui::BeginTabItem("Textures"))
-            {
-                RenderTextureSlots();
-                ImGui::EndTabItem();
-            }
-
-            if (ImGui::BeginTabItem("Preview"))
-            {
-                RenderLivePreview();
-                ImGui::EndTabItem();
-            }
-
-            if (ImGui::BeginTabItem("Actions"))
-            {
-                RenderActions();
-                ImGui::EndTabItem();
-            }
-
-            if (ImGui::BeginTabItem("Templates"))
-            {
-                RenderTemplateSelector();
-                ImGui::EndTabItem();
-            }
-
-            ImGui::EndTabBar();
-        }
-
-        ImGui::End();
-    }
-
-        standardTemplate.TextureSlots = { "u_DiffuseMap", "u_SpecularMap", "u_NormalMap" };
-        m_Templates.push_back(standardTemplate);
-    }
-
-    void MaterialEditor::OnImGuiRender()
-    {
-        if (!m_Enabled)
-            return;
-
-        ImGui::Begin("Material Editor", &m_Enabled);
-
         // Toolbar
         if (ImGui::Button("New Material"))
             m_ShowMaterialCreator = true;
