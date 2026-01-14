@@ -1,5 +1,8 @@
 #include "MaterialEditor.h"
 #include "Core/Utilities/FileSystem.h"
+#include "Core/Renderer/Camera.h"
+#include <glad/glad.h>
+#include <glm/gtc/matrix_transform.hpp>
 #include <algorithm>
 #include <cstring>
 
@@ -7,8 +10,20 @@ namespace Editor
 {
     MaterialEditor::MaterialEditor()
     {
-        // Create preview viewport
-        m_PreviewViewport = std::make_unique<Core::Editor::Viewport>(512, 512);
+        // Create preview framebuffer
+        using namespace Core::Renderer;
+        FramebufferSpec fbSpec;
+        fbSpec.Width = 512;
+        fbSpec.Height = 512;
+        fbSpec.Attachments = {
+            { FramebufferTextureFormat::RGBA8 },         // Color
+            { FramebufferTextureFormat::Depth24Stencil8 } // Depth/Stencil
+        };
+        m_PreviewFramebuffer = std::make_shared<Framebuffer>(fbSpec);
+        
+        // Create preview viewport and set framebuffer
+        m_PreviewViewport = std::make_unique<Core::Editor::Viewport>("Material Preview");
+        m_PreviewViewport->SetFramebuffer(m_PreviewFramebuffer, 0);
         
         // Add some default templates
         MaterialTemplate unlitTemplate;
@@ -352,31 +367,53 @@ namespace Editor
         
         ImVec2 viewportSize = ImGui::GetContentRegionAvail();
         
-        // Resize viewport if needed
+        // Resize framebuffer if needed
         if (viewportSize.x > 0 && viewportSize.y > 0)
         {
             uint32_t width = (uint32_t)viewportSize.x;
             uint32_t height = (uint32_t)viewportSize.y;
             
-            if (m_PreviewViewport->GetWidth() != width || m_PreviewViewport->GetHeight() != height)
+            // Resize framebuffer
+            if (m_PreviewFramebuffer->GetSpec().Width != width || 
+                m_PreviewFramebuffer->GetSpec().Height != height)
             {
-                m_PreviewViewport->Resize(width, height);
+                m_PreviewFramebuffer->Resize(width, height);
             }
             
-            // Render the preview
-            float rotationRadians = glm::radians(m_PreviewRotation);
-            if (m_PreviewShape == PreviewShape::Sphere)
-            {
-                m_PreviewViewport->RenderPreviewSphere(m_CurrentMaterial, rotationRadians);
-            }
-            else
-            {
-                m_PreviewViewport->RenderPreviewCube(m_CurrentMaterial, rotationRadians);
-            }
+            // Render to framebuffer
+            m_PreviewFramebuffer->Bind();
+            glClearColor(0.2f, 0.2f, 0.25f, 1.0f);
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+            glEnable(GL_DEPTH_TEST);
+            
+            // Set up simple camera for preview
+            Core::Renderer::Camera camera;
+            camera.SetProjectionType(Core::Renderer::ProjectionType::Perspective);
+            camera.SetPerspective(45.0f, static_cast<float>(width) / static_cast<float>(height), 0.1f, 100.0f);
+            camera.SetPosition(glm::vec3(0.0f, 0.0f, 5.0f));
+            camera.LookAt(glm::vec3(0.0f));
+            
+            // Create model matrix with rotation
+            glm::mat4 model = glm::mat4(1.0f);
+            model = glm::rotate(model, glm::radians(m_PreviewRotation), glm::vec3(0.0f, 1.0f, 0.0f));
+            
+            // Bind material and set matrices
+            m_CurrentMaterial->Bind();
+            m_CurrentMaterial->SetMat4("u_Model", model);
+            m_CurrentMaterial->SetMat4("u_View", camera.GetViewMatrix());
+            m_CurrentMaterial->SetMat4("u_Projection", camera.GetProjectionMatrix());
+            
+            // TODO: Draw preview geometry (sphere or cube)
+            // This requires access to preview meshes, which should be part of the Viewport
+            // or renderer infrastructure. For now, this is a placeholder.
+            
+            glUseProgram(0);
+            Core::Renderer::Framebuffer::Unbind();
             
             // Display the rendered texture
-            ImGui::Image((ImTextureID)(uintptr_t)m_PreviewViewport->GetColorAttachment(),
-                        viewportSize, ImVec2(0, 1), ImVec2(1, 0)); // Flip Y for OpenGL
+            uint32_t textureID = m_PreviewFramebuffer->GetColorAttachmentID(0);
+            ImTextureID imguiTex = (ImTextureID)(intptr_t)textureID;
+            ImGui::Image(imguiTex, viewportSize, ImVec2(0, 1), ImVec2(1, 0)); // Flip Y for OpenGL
         }
         else
         {

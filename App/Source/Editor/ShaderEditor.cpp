@@ -16,8 +16,20 @@ namespace Editor
         m_VertexShaderBuffer[0] = '\0';
         m_FragmentShaderBuffer[0] = '\0';
         
-        // Create preview viewport
-        m_PreviewViewport = std::make_unique<Core::Renderer::Viewport>(512, 512);
+        // Create preview framebuffer
+        using namespace Core::Renderer;
+        FramebufferSpec fbSpec;
+        fbSpec.Width = 512;
+        fbSpec.Height = 512;
+        fbSpec.Attachments = {
+            { FramebufferTextureFormat::RGBA8 },         // Color
+            { FramebufferTextureFormat::Depth24Stencil8 } // Depth/Stencil
+        };
+        m_PreviewFramebuffer = std::make_shared<Framebuffer>(fbSpec);
+        
+        // Create preview viewport and set framebuffer
+        m_PreviewViewport = std::make_unique<Core::Editor::Viewport>("Shader Preview");
+        m_PreviewViewport->SetFramebuffer(m_PreviewFramebuffer, 0);
         
         // Get available shaders from manager
         auto& shaderMgr = Core::Renderer::ShaderManager::Get();
@@ -345,17 +357,21 @@ namespace Editor
             uint32_t width = (uint32_t)viewportSize.x;
             uint32_t height = (uint32_t)viewportSize.y;
             
-            if (m_PreviewViewport->GetWidth() != width || m_PreviewViewport->GetHeight() != height)
+            // Resize framebuffer if needed
+            if (m_PreviewFramebuffer->GetSpec().Width != width || 
+                m_PreviewFramebuffer->GetSpec().Height != height)
             {
-                m_PreviewViewport->Resize(width, height);
+                m_PreviewFramebuffer->Resize(width, height);
             }
             
             // Note: This is a placeholder. To actually render, you'd need to:
             // 1. Create a Material from the current shader
-            // 2. Pass it to RenderPreviewSphere/Cube
-            // For now, just show the viewport texture
-            ImGui::Image((ImTextureID)(uintptr_t)m_PreviewViewport->GetColorAttachment(),
-                        viewportSize, ImVec2(0, 1), ImVec2(1, 0)); // Flip Y for OpenGL
+            // 2. Bind framebuffer and render preview geometry
+            // For now, just show the framebuffer texture
+            
+            uint32_t textureID = m_PreviewFramebuffer->GetColorAttachmentID(0);
+            ImTextureID imguiTex = (ImTextureID)(intptr_t)textureID;
+            ImGui::Image(imguiTex, viewportSize, ImVec2(0, 1), ImVec2(1, 0)); // Flip Y for OpenGL
             
             ImGui::TextWrapped("Note: Preview requires material creation from shader.");
         }

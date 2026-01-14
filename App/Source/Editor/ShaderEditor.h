@@ -2,7 +2,8 @@
 #include "Core/Layer.h"
 #include "Core/Renderer/ShaderManager.h"
 #include "Core/Renderer/ShaderEditorInterface.h"
-#include "Core/Renderer/Viewport.h"
+#include "Core/Renderer/Framebuffer.h"
+#include "Core/Editor/Viewport.h"
 #include <imgui.h>
 #include <string>
 #include <vector>
@@ -92,7 +93,8 @@ namespace Editor
         float m_ShaderListWidth = 200.0f;
         
         // Preview state
-        std::unique_ptr<Core::Renderer::Viewport> m_PreviewViewport;
+        std::unique_ptr<Core::Editor::Viewport> m_PreviewViewport;
+        std::shared_ptr<Core::Renderer::Framebuffer> m_PreviewFramebuffer;
         float m_PreviewRotation = 0.0f;
         enum class PreviewShape { Sphere, Cube } m_PreviewShape = PreviewShape::Sphere;
         

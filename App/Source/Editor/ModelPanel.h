@@ -1,6 +1,7 @@
 #pragma once
 #include "Core/Renderer/Model.h"
 #include "Core/Renderer/Material.h"
+#include "Core/Renderer/Framebuffer.h"
 #include "Core/Editor/Viewport.h"
 #include <imgui.h>
 #include <memory>
@@ -50,6 +51,7 @@ namespace Editor
         
         // Preview viewport
         std::unique_ptr<Core::Editor::Viewport> m_Viewport;
+        std::shared_ptr<Core::Renderer::Framebuffer> m_PreviewFramebuffer;
         std::shared_ptr<Core::Renderer::Material> m_PreviewMaterial;
         
         // Preview controls

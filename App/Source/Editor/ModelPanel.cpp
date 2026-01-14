@@ -10,8 +10,20 @@ namespace Editor
 {
     ModelPanel::ModelPanel()
     {
-        // Create viewport for live preview
-        m_Viewport = std::make_unique<Core::Renderer::Viewport>(512, 512);
+        // Create preview framebuffer
+        using namespace Core::Renderer;
+        FramebufferSpec fbSpec;
+        fbSpec.Width = 512;
+        fbSpec.Height = 512;
+        fbSpec.Attachments = {
+            { FramebufferTextureFormat::RGBA8 },         // Color
+            { FramebufferTextureFormat::Depth24Stencil8 } // Depth/Stencil
+        };
+        m_PreviewFramebuffer = std::make_shared<Framebuffer>(fbSpec);
+        
+        // Create viewport for live preview and set framebuffer
+        m_Viewport = std::make_unique<Core::Editor::Viewport>("Model Preview");
+        m_Viewport->SetFramebuffer(m_PreviewFramebuffer, 0);
         
         // Create a simple material for preview
         // Note: These paths should be adjusted to your actual shader paths
@@ -271,7 +283,7 @@ namespace Editor
         ImGui::Separator();
         
         // Render the preview
-        if (m_Viewport && m_PreviewMaterial)
+        if (m_PreviewFramebuffer && m_PreviewMaterial)
         {
             // Get available size for preview
             ImVec2 availableSize = ImGui::GetContentRegionAvail();
@@ -280,14 +292,15 @@ namespace Editor
             
             if (width > 0 && height > 0)
             {
-                // Resize viewport if needed
-                if (m_Viewport->GetWidth() != width || m_Viewport->GetHeight() != height)
+                // Resize framebuffer if needed
+                if (m_PreviewFramebuffer->GetSpec().Width != static_cast<uint32_t>(width) || 
+                    m_PreviewFramebuffer->GetSpec().Height != static_cast<uint32_t>(height))
                 {
-                    m_Viewport->Resize(width, height);
+                    m_PreviewFramebuffer->Resize(width, height);
                 }
                 
-                // Render to viewport
-                m_Viewport->Bind();
+                // Render to framebuffer
+                m_PreviewFramebuffer->Bind();
                 
                 glClearColor(0.2f, 0.2f, 0.25f, 1.0f);
                 glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -326,21 +339,22 @@ namespace Editor
                 }
                 else if (m_PreviewShape == PreviewShape::Sphere)
                 {
-                    m_Viewport->DrawPreviewSphere();
+                    // TODO: Draw sphere mesh (requires preview mesh infrastructure)
                 }
                 else if (m_PreviewShape == PreviewShape::Cube)
                 {
-                    m_Viewport->DrawPreviewCube();
+                    // TODO: Draw cube mesh (requires preview mesh infrastructure)
                 }
                 
                 glUseProgram(0);
                 
-                m_Viewport->Unbind();
+                Core::Renderer::Framebuffer::Unbind();
                 
                 // Display the rendered texture
-                GLuint textureID = m_Viewport->GetColorAttachment();
+                uint32_t textureID = m_PreviewFramebuffer->GetColorAttachmentID(0);
+                ImTextureID imguiTex = (ImTextureID)(intptr_t)textureID;
                 ImGui::Image(
-                    reinterpret_cast<void*>(static_cast<intptr_t>(textureID)),
+                    imguiTex,
                     ImVec2(static_cast<float>(width), static_cast<float>(height)),
                     ImVec2(0, 1), // Flip Y for OpenGL
                     ImVec2(1, 0)
