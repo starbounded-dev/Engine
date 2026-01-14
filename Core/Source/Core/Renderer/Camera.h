@@ -23,6 +23,7 @@ namespace Core::Renderer
 
         void SetViewportSize(float width, float height);
 
+        void SetProjectionType(ProjectionType type) { m_ProjectionType = type; m_ProjDirty = true; }
         ProjectionType GetProjectionType() const { return m_ProjectionType; }
 
         float GetFOVDegrees() const { return m_PerspectiveFOVDegrees; }

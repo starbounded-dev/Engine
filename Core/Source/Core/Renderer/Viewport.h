@@ -39,6 +39,10 @@ namespace Core::Renderer
         void RenderPreviewSphere(std::shared_ptr<Material> material, float rotation = 0.0f);
         void RenderPreviewCube(std::shared_ptr<Material> material, float rotation = 0.0f);
         
+        // Draw preview shapes (without material - for use when material is already bound)
+        void DrawPreviewSphere();
+        void DrawPreviewCube();
+        
         // Get/Set camera for preview
         void SetCamera(std::shared_ptr<Camera> camera) { m_Camera = camera; }
         std::shared_ptr<Camera> GetCamera() const { return m_Camera; }

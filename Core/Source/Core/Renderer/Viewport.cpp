@@ -378,4 +378,20 @@ namespace Core::Renderer
         glUseProgram(0);
         Unbind();
     }
+
+    void Viewport::DrawPreviewSphere()
+    {
+        // Just draw the sphere (assumes material is already bound)
+        glBindVertexArray(m_SphereVAO);
+        glDrawElements(GL_TRIANGLES, m_SphereIndexCount, GL_UNSIGNED_INT, 0);
+        glBindVertexArray(0);
+    }
+
+    void Viewport::DrawPreviewCube()
+    {
+        // Just draw the cube (assumes material is already bound)
+        glBindVertexArray(m_CubeVAO);
+        glDrawElements(GL_TRIANGLES, m_CubeIndexCount, GL_UNSIGNED_INT, 0);
+        glBindVertexArray(0);
+    }
 }
