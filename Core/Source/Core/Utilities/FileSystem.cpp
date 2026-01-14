@@ -15,13 +15,14 @@ namespace Utilities {
 	std::optional<std::string> FileSystem::OpenFileDialog(const char* filterList)
 	{
 #ifdef USE_NFD
-		nfdchar_t* outPath = nullptr;
-		nfdresult_t result = NFD_OpenDialog(filterList, nullptr, &outPath);
+		nfdu8char_t* outPath = nullptr;
+		nfdfilteritem_t filters[1] = { { "Files", filterList } };
+		nfdresult_t result = NFD_OpenDialogU8(&outPath, filters, 1, nullptr);
 		
 		if (result == NFD_OKAY)
 		{
-			std::string path(outPath);
-			free(outPath);
+			std::string path(reinterpret_cast<const char*>(outPath));
+			NFD_FreePathU8(outPath);
 			return path;
 		}
 		else if (result == NFD_CANCEL)
@@ -42,13 +43,14 @@ namespace Utilities {
 	std::optional<std::string> FileSystem::SaveFileDialog(const char* filterList)
 	{
 #ifdef USE_NFD
-		nfdchar_t* outPath = nullptr;
-		nfdresult_t result = NFD_SaveDialog(filterList, nullptr, &outPath);
+		nfdu8char_t* outPath = nullptr;
+		nfdfilteritem_t filters[1] = { { "Files", filterList } };
+		nfdresult_t result = NFD_SaveDialogU8(&outPath, filters, 1, nullptr, nullptr);
 		
 		if (result == NFD_OKAY)
 		{
-			std::string path(outPath);
-			free(outPath);
+			std::string path(reinterpret_cast<const char*>(outPath));
+			NFD_FreePathU8(outPath);
 			return path;
 		}
 		else if (result == NFD_CANCEL)
@@ -67,13 +69,14 @@ namespace Utilities {
 	std::optional<std::string> FileSystem::SelectFolderDialog(const char* defaultPath)
 	{
 #ifdef USE_NFD
-		nfdchar_t* outPath = nullptr;
-		nfdresult_t result = NFD_PickFolder(defaultPath, &outPath);
+		nfdu8char_t* outPath = nullptr;
+		const nfdu8char_t* defPath = defaultPath ? reinterpret_cast<const nfdu8char_t*>(defaultPath) : nullptr;
+		nfdresult_t result = NFD_PickFolderU8(&outPath, defPath);
 		
 		if (result == NFD_OKAY)
 		{
-			std::string path(outPath);
-			free(outPath);
+			std::string path(reinterpret_cast<const char*>(outPath));
+			NFD_FreePathU8(outPath);
 			return path;
 		}
 		else if (result == NFD_CANCEL)
@@ -92,22 +95,26 @@ namespace Utilities {
 	std::vector<std::string> FileSystem::OpenMultipleFilesDialog(const char* filterList)
 	{
 #ifdef USE_NFD
-		nfdpathset_t pathSet;
-		nfdresult_t result = NFD_OpenDialogMultiple(filterList, nullptr, &pathSet);
+		const nfdu8pathset_t* pathSet = nullptr;
+		nfdfilteritem_t filters[1] = { { "Files", filterList } };
+		nfdresult_t result = NFD_OpenDialogMultipleU8(&pathSet, filters, 1, nullptr);
 		
 		std::vector<std::string> paths;
 		if (result == NFD_OKAY)
 		{
-			size_t count = NFD_PathSet_GetCount(&pathSet);
+			nfdpathsetsize_t count;
+			NFD_PathSet_GetCount(pathSet, &count);
 			paths.reserve(count);
 			
-			for (size_t i = 0; i < count; i++)
+			for (nfdpathsetsize_t i = 0; i < count; i++)
 			{
-				nfdchar_t* path = NFD_PathSet_GetPath(&pathSet, i);
-				paths.emplace_back(path);
+				nfdu8char_t* path;
+				NFD_PathSet_GetPathU8(pathSet, i, &path);
+				paths.emplace_back(reinterpret_cast<const char*>(path));
+				NFD_PathSet_FreePathU8(path);
 			}
 			
-			NFD_PathSet_Free(&pathSet);
+			NFD_PathSet_Free(pathSet);
 		}
 		
 		return paths;
