@@ -11,6 +11,8 @@
 #undef MoveFile
 #endif
 
+#define USE_NFD
+
 // NFD (Native File Dialog) integration - will be linked when NFD is properly set up
 // For now, we provide stub implementations that can be replaced with NFD calls
 #ifdef USE_NFD
@@ -99,7 +101,7 @@ namespace Utilities {
 		return std::nullopt;
 #endif
 	}
-
+	/*
 	std::vector<std::string> FileSystem::OpenMultipleFilesDialog(const char* filterList)
 	{
 #ifdef USE_NFD
@@ -130,7 +132,7 @@ namespace Utilities {
 		return std::vector<std::string>();
 #endif
 	}
-
+	*/
 	bool FileSystem::FileExists(const std::string& filepath)
 	{
 		namespace fs = std::filesystem;
@@ -397,7 +399,7 @@ namespace Utilities {
 			return path;
 		}
 	}
-
+	/*
 	std::string FileSystem::GetExecutablePath()
 	{
 		namespace fs = std::filesystem;
@@ -424,7 +426,7 @@ namespace Utilities {
 		return "";
 #endif
 	}
-
+	*/
 	std::string FileSystem::GetWorkingDirectory()
 	{
 		namespace fs = std::filesystem;

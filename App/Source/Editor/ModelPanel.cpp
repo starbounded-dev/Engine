@@ -459,31 +459,33 @@ namespace Editor
         auto modelPath = Core::Utilities::FileSystem::OpenFileDialog(
             Core::Utilities::FileSystem::FILTER_MODELS
         );
-        
+
         if (modelPath.has_value())
         {
             LoadModel(modelPath.value());
         }
-            
-            if (ImGui::Button("Load", ImVec2(120, 0)))
+
+        // Declare pathBuffer to fix the error
+        char pathBuffer[1024] = { '\0' };
+
+        if (ImGui::Button("Load", ImVec2(120, 0)))
+        {
+            if (pathBuffer[0] != '\0')
             {
-                if (pathBuffer[0] != '\0')
-                {
-                    LoadModel(pathBuffer);
-                    pathBuffer[0] = '\0';
-                }
-                ImGui::CloseCurrentPopup();
-            }
-            
-            ImGui::SameLine();
-            
-            if (ImGui::Button("Cancel", ImVec2(120, 0)))
-            {
+                LoadModel(pathBuffer);
                 pathBuffer[0] = '\0';
-                ImGui::CloseCurrentPopup();
             }
-            
-            ImGui::EndPopup();
+            ImGui::CloseCurrentPopup();
         }
+
+        ImGui::SameLine();
+
+        if (ImGui::Button("Cancel", ImVec2(120, 0)))
+        {
+            pathBuffer[0] = '\0';
+            ImGui::CloseCurrentPopup();
+        }
+
+        ImGui::EndPopup();
     }
 }
