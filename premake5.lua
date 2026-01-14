@@ -63,6 +63,7 @@ group "Dependencies"
 	include "Core/vendor/GLFW"
 	include "Core/vendor/imgui"
 	include "Core/vendor/tracy"
+	include "Core/vendor/NFD-Extended"
 group ""
 
 group "Dependencies/Text"

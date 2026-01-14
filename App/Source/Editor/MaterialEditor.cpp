@@ -12,16 +12,16 @@ namespace Editor
         // Add some default templates
         MaterialTemplate unlitTemplate;
         unlitTemplate.Name = "Unlit";
-        unlitTemplate.VertexShader = "shaders/unlit.vert";
-        unlitTemplate.FragmentShader = "shaders/unlit.frag";
+        unlitTemplate.VertexShader = "Resources/Shaders/Unlit.vert.glsl";
+        unlitTemplate.FragmentShader = "Resources/Shaders/Unlit.frag.glsl";
         unlitTemplate.DefaultValues["u_Color"] = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
         unlitTemplate.TextureSlots = { "u_Texture" };
         m_Templates.push_back(unlitTemplate);
         
         MaterialTemplate pbrTemplate;
         pbrTemplate.Name = "PBR";
-        pbrTemplate.VertexShader = "shaders/pbr.vert";
-        pbrTemplate.FragmentShader = "shaders/pbr.frag";
+        pbrTemplate.VertexShader = "Resources/Shaders/PBR.vert.glsl";
+        pbrTemplate.FragmentShader = "Resources/Shaders/PBR.frag.glsl";
         pbrTemplate.DefaultValues["u_Albedo"] = glm::vec3(1.0f, 1.0f, 1.0f);
         pbrTemplate.DefaultValues["u_Metallic"] = 0.5f;
         pbrTemplate.DefaultValues["u_Roughness"] = 0.5f;
@@ -31,8 +31,8 @@ namespace Editor
         
         MaterialTemplate standardTemplate;
         standardTemplate.Name = "Standard";
-        standardTemplate.VertexShader = "shaders/standard.vert";
-        standardTemplate.FragmentShader = "shaders/standard.frag";
+        standardTemplate.VertexShader = "Resources/Shaders/Standart.vert.glsl";
+        standardTemplate.FragmentShader = "Resources/Shaders/Standart.frag.glsl";
         standardTemplate.DefaultValues["u_Diffuse"] = glm::vec3(0.8f, 0.8f, 0.8f);
         standardTemplate.DefaultValues["u_Specular"] = glm::vec3(1.0f, 1.0f, 1.0f);
         standardTemplate.DefaultValues["u_Shininess"] = 32.0f;

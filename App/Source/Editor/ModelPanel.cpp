@@ -15,8 +15,8 @@ namespace Editor
         // Create a simple material for preview
         // Note: These paths should be adjusted to your actual shader paths
         m_PreviewMaterial = std::make_shared<Core::Renderer::Material>(
-            "App/Resources/Shaders/DefaultVertex.glsl",
-            "App/Resources/Shaders/DefaultFragment.glsl"
+            "Resources/Shaders/DebugModel.vert.glsl",
+            "Resources/Shaders/DebugModel.frag.glsl"
         );
     }
 
