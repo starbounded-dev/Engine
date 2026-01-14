@@ -149,7 +149,7 @@ namespace Core::Renderer
                 }
             }
             
-            m_SphereIndexCount = indices.size();
+            m_SphereIndexCount = static_cast<uint32_t>(indices.size());
             
             // Create VAO, VBO, EBO
             glGenVertexArrays(1, &m_SphereVAO);
@@ -337,16 +337,17 @@ namespace Core::Renderer
         
         // Bind material and set matrices
         material->Bind();
-        material->SetMatrix4("u_Model", model);
-        material->SetMatrix4("u_View", m_Camera->GetViewMatrix());
-        material->SetMatrix4("u_Projection", m_Camera->GetProjectionMatrix());
+        material->SetMat4("u_Model", model);
+        material->SetMat4("u_View", m_Camera->GetViewMatrix());
+        material->SetMat4("u_Projection", m_Camera->GetProjectionMatrix());
         
         // Render sphere
         glBindVertexArray(m_SphereVAO);
         glDrawElements(GL_TRIANGLES, m_SphereIndexCount, GL_UNSIGNED_INT, 0);
         glBindVertexArray(0);
         
-        material->Unbind();
+        // Unbind by using program 0
+        glUseProgram(0);
         Unbind();
     }
 
@@ -364,16 +365,17 @@ namespace Core::Renderer
         
         // Bind material and set matrices
         material->Bind();
-        material->SetMatrix4("u_Model", model);
-        material->SetMatrix4("u_View", m_Camera->GetViewMatrix());
-        material->SetMatrix4("u_Projection", m_Camera->GetProjectionMatrix());
+        material->SetMat4("u_Model", model);
+        material->SetMat4("u_View", m_Camera->GetViewMatrix());
+        material->SetMat4("u_Projection", m_Camera->GetProjectionMatrix());
         
         // Render cube
         glBindVertexArray(m_CubeVAO);
         glDrawElements(GL_TRIANGLES, m_CubeIndexCount, GL_UNSIGNED_INT, 0);
         glBindVertexArray(0);
         
-        material->Unbind();
+        // Unbind by using program 0
+        glUseProgram(0);
         Unbind();
     }
 }
