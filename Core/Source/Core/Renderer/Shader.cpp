@@ -7,7 +7,7 @@
 
 #include <glad/glad.h>
 
-namespace Renderer {
+namespace Core::Renderer {
 
 	static std::string ReadTextFile(const std::filesystem::path& path)
 	{

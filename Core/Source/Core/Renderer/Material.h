@@ -87,6 +87,13 @@ namespace Core::Renderer
         GLuint GetProgram() const;
         const std::unordered_map<std::string, MaterialValue>& GetValues() const { return m_Values; }
         const std::vector<TextureBinding>& GetTextures() const { return m_Textures; }
+        
+        // Get shader paths for editor integration
+        const std::string& GetVertexPath() const;
+        const std::string& GetFragmentPath() const;
+        
+        // Load this material's shaders into the shader editor (if available)
+        void LoadIntoShaderEditor() const;
 
     public:
         void Rebuild(); // compile + link + reflect

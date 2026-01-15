@@ -2,7 +2,7 @@
 
 #include <print>
 
-namespace Renderer::Utils {
+namespace Core::Renderer::Utils {
 
 	const char* GLDebugSourceToString(GLenum source)
 	{

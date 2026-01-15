@@ -60,6 +60,13 @@ Dependencies = {
 		Linux = { LibName = "assimp", LibDir = "%{wks.location}/Core/vendor/assimp/bin/linux/" },
 		Configurations = "Debug,Release"
 	},
+	NFDExtended = {
+		LibName = "NFD-Extended",
+		IncludeDir = "%{wks.location}/Core/vendor/NFD-Extended/NFD-Extended/src/include"
+	},
+	Choc = {
+		IncludeDir = "%{wks.location}/Core/vendor/choc",
+	},
 	GLFW = {
 		-- No need to specify LibDir for GLFW since it's automatically handled by premake
 		LibName = "GLFW",
